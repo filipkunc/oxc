@@ -132,8 +132,6 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         } else {
             (None, None)
         };
-        // `const foo /* #__PURE__ */ = bar()` - pure comment before `=` cannot be applied
-        self.lexer.trivia_builder.mark_current_pure_comment_not_applied();
         let init = if !self.eat(Kind::Eq) {
             None
         } else if unlikely(self.options.mode == ParseMode::Editor)

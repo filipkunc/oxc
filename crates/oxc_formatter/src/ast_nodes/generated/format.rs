@@ -501,7 +501,12 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, IdentifierReference<'a>
             return;
         }
         let needs_parentheses = self.needs_parentheses(f);
-        format_leading_comments_and_open_paren(self.span(), needs_parentheses, f);
+        format_leading_comments_and_open_paren(
+            self.span(),
+            self.leading_comments_start(),
+            needs_parentheses,
+            f,
+        );
         if is_suppressed {
             self.write_suppressed(f);
         } else {
@@ -547,7 +552,12 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, ThisExpression> {
             return;
         }
         let needs_parentheses = self.needs_parentheses(f);
-        format_leading_comments_and_open_paren(self.span(), needs_parentheses, f);
+        format_leading_comments_and_open_paren(
+            self.span(),
+            self.leading_comments_start(),
+            needs_parentheses,
+            f,
+        );
         if is_suppressed {
             self.write_suppressed(f);
         } else {
@@ -567,7 +577,12 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, ArrayExpression<'a>> {
             return;
         }
         let needs_parentheses = self.needs_parentheses(f);
-        format_leading_comments_and_open_paren(self.span(), needs_parentheses, f);
+        format_leading_comments_and_open_paren(
+            self.span(),
+            self.leading_comments_start(),
+            needs_parentheses,
+            f,
+        );
         if is_suppressed {
             self.write_suppressed(f);
         } else {
@@ -641,7 +656,12 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, ObjectExpression<'a>> {
             return;
         }
         let needs_parentheses = self.needs_parentheses(f);
-        format_leading_comments_and_open_paren(self.span(), needs_parentheses, f);
+        format_leading_comments_and_open_paren(
+            self.span(),
+            self.leading_comments_start(),
+            needs_parentheses,
+            f,
+        );
         if is_suppressed {
             self.write_suppressed(f);
         } else {
@@ -745,7 +765,12 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, TemplateLiteral<'a>> {
             return;
         }
         let needs_parentheses = self.needs_parentheses(f);
-        format_leading_comments_and_open_paren(self.span(), needs_parentheses, f);
+        format_leading_comments_and_open_paren(
+            self.span(),
+            self.leading_comments_start(),
+            needs_parentheses,
+            f,
+        );
         if is_suppressed {
             self.write_suppressed(f);
         } else {
@@ -765,7 +790,12 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, TaggedTemplateExpressio
             return;
         }
         let needs_parentheses = self.needs_parentheses(f);
-        format_leading_comments_and_open_paren(self.span(), needs_parentheses, f);
+        format_leading_comments_and_open_paren(
+            self.span(),
+            self.leading_comments_start(),
+            needs_parentheses,
+            f,
+        );
         if is_suppressed {
             self.write_suppressed(f);
         } else {
@@ -838,7 +868,12 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, ComputedMemberExpressio
             return;
         }
         let needs_parentheses = self.needs_parentheses(f);
-        format_leading_comments_and_open_paren(self.span(), needs_parentheses, f);
+        format_leading_comments_and_open_paren(
+            self.span(),
+            self.leading_comments_start(),
+            needs_parentheses,
+            f,
+        );
         if is_suppressed {
             self.write_suppressed(f);
         } else {
@@ -858,7 +893,12 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, StaticMemberExpression<
             return;
         }
         let needs_parentheses = self.needs_parentheses(f);
-        format_leading_comments_and_open_paren(self.span(), needs_parentheses, f);
+        format_leading_comments_and_open_paren(
+            self.span(),
+            self.leading_comments_start(),
+            needs_parentheses,
+            f,
+        );
         if is_suppressed {
             self.write_suppressed(f);
         } else {
@@ -878,7 +918,12 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, PrivateFieldExpression<
             return;
         }
         let needs_parentheses = self.needs_parentheses(f);
-        format_leading_comments_and_open_paren(self.span(), needs_parentheses, f);
+        format_leading_comments_and_open_paren(
+            self.span(),
+            self.leading_comments_start(),
+            needs_parentheses,
+            f,
+        );
         if is_suppressed {
             self.write_suppressed(f);
         } else {
@@ -898,7 +943,12 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, CallExpression<'a>> {
             return;
         }
         let needs_parentheses = self.needs_parentheses(f);
-        format_leading_comments_and_open_paren(self.span(), needs_parentheses, f);
+        format_leading_comments_and_open_paren(
+            self.span(),
+            self.leading_comments_start(),
+            needs_parentheses,
+            f,
+        );
         if is_suppressed {
             self.write_suppressed(f);
         } else {
@@ -918,7 +968,12 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, NewExpression<'a>> {
             return;
         }
         let needs_parentheses = self.needs_parentheses(f);
-        format_leading_comments_and_open_paren(self.span(), needs_parentheses, f);
+        format_leading_comments_and_open_paren(
+            self.span(),
+            self.leading_comments_start(),
+            needs_parentheses,
+            f,
+        );
         if is_suppressed {
             self.write_suppressed(f);
         } else {
@@ -938,7 +993,12 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, ImportMeta> {
             return;
         }
         let needs_parentheses = self.needs_parentheses(f);
-        format_leading_comments_and_open_paren(self.span(), needs_parentheses, f);
+        format_leading_comments_and_open_paren(
+            self.span(),
+            self.leading_comments_start(),
+            needs_parentheses,
+            f,
+        );
         if is_suppressed {
             self.write_suppressed(f);
         } else {
@@ -958,7 +1018,12 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, NewTarget> {
             return;
         }
         let needs_parentheses = self.needs_parentheses(f);
-        format_leading_comments_and_open_paren(self.span(), needs_parentheses, f);
+        format_leading_comments_and_open_paren(
+            self.span(),
+            self.leading_comments_start(),
+            needs_parentheses,
+            f,
+        );
         if is_suppressed {
             self.write_suppressed(f);
         } else {
@@ -1022,7 +1087,12 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, UpdateExpression<'a>> {
             return;
         }
         let needs_parentheses = self.needs_parentheses(f);
-        format_leading_comments_and_open_paren(self.span(), needs_parentheses, f);
+        format_leading_comments_and_open_paren(
+            self.span(),
+            self.leading_comments_start(),
+            needs_parentheses,
+            f,
+        );
         if is_suppressed {
             self.write_suppressed(f);
         } else {
@@ -1042,7 +1112,12 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, UnaryExpression<'a>> {
             return;
         }
         let needs_parentheses = self.needs_parentheses(f);
-        format_leading_comments_and_open_paren(self.span(), needs_parentheses, f);
+        format_leading_comments_and_open_paren(
+            self.span(),
+            self.leading_comments_start(),
+            needs_parentheses,
+            f,
+        );
         if is_suppressed {
             self.write_suppressed(f);
         } else {
@@ -1062,7 +1137,12 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, BinaryExpression<'a>> {
             return;
         }
         let needs_parentheses = self.needs_parentheses(f);
-        format_leading_comments_and_open_paren(self.span(), needs_parentheses, f);
+        format_leading_comments_and_open_paren(
+            self.span(),
+            self.leading_comments_start(),
+            needs_parentheses,
+            f,
+        );
         if is_suppressed {
             self.write_suppressed(f);
         } else {
@@ -1082,7 +1162,12 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, PrivateInExpression<'a>
             return;
         }
         let needs_parentheses = self.needs_parentheses(f);
-        format_leading_comments_and_open_paren(self.span(), needs_parentheses, f);
+        format_leading_comments_and_open_paren(
+            self.span(),
+            self.leading_comments_start(),
+            needs_parentheses,
+            f,
+        );
         if is_suppressed {
             self.write_suppressed(f);
         } else {
@@ -1102,7 +1187,12 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, LogicalExpression<'a>> 
             return;
         }
         let needs_parentheses = self.needs_parentheses(f);
-        format_leading_comments_and_open_paren(self.span(), needs_parentheses, f);
+        format_leading_comments_and_open_paren(
+            self.span(),
+            self.leading_comments_start(),
+            needs_parentheses,
+            f,
+        );
         if is_suppressed {
             self.write_suppressed(f);
         } else {
@@ -1122,7 +1212,12 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, ConditionalExpression<'
             return;
         }
         let needs_parentheses = self.needs_parentheses(f);
-        format_leading_comments_and_open_paren(self.span(), needs_parentheses, f);
+        format_leading_comments_and_open_paren(
+            self.span(),
+            self.leading_comments_start(),
+            needs_parentheses,
+            f,
+        );
         if is_suppressed {
             self.write_suppressed(f);
         } else {
@@ -1142,7 +1237,12 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, AssignmentExpression<'a
             return;
         }
         let needs_parentheses = self.needs_parentheses(f);
-        format_leading_comments_and_open_paren(self.span(), needs_parentheses, f);
+        format_leading_comments_and_open_paren(
+            self.span(),
+            self.leading_comments_start(),
+            needs_parentheses,
+            f,
+        );
         if is_suppressed {
             self.write_suppressed(f);
         } else {
@@ -1434,7 +1534,12 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, SequenceExpression<'a>>
             return;
         }
         let needs_parentheses = self.needs_parentheses(f);
-        format_leading_comments_and_open_paren(self.span(), needs_parentheses, f);
+        format_leading_comments_and_open_paren(
+            self.span(),
+            self.leading_comments_start(),
+            needs_parentheses,
+            f,
+        );
         if is_suppressed {
             self.write_suppressed(f);
         } else {
@@ -1454,7 +1559,12 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, Super> {
             return;
         }
         let needs_parentheses = self.needs_parentheses(f);
-        format_leading_comments_and_open_paren(self.span(), needs_parentheses, f);
+        format_leading_comments_and_open_paren(
+            self.span(),
+            self.leading_comments_start(),
+            needs_parentheses,
+            f,
+        );
         if is_suppressed {
             self.write_suppressed(f);
         } else {
@@ -1474,7 +1584,12 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, AwaitExpression<'a>> {
             return;
         }
         let needs_parentheses = self.needs_parentheses(f);
-        format_leading_comments_and_open_paren(self.span(), needs_parentheses, f);
+        format_leading_comments_and_open_paren(
+            self.span(),
+            self.leading_comments_start(),
+            needs_parentheses,
+            f,
+        );
         if is_suppressed {
             self.write_suppressed(f);
         } else {
@@ -1494,7 +1609,12 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, ChainExpression<'a>> {
             return;
         }
         let needs_parentheses = self.needs_parentheses(f);
-        format_leading_comments_and_open_paren(self.span(), needs_parentheses, f);
+        format_leading_comments_and_open_paren(
+            self.span(),
+            self.leading_comments_start(),
+            needs_parentheses,
+            f,
+        );
         if is_suppressed {
             self.write_suppressed(f);
         } else {
@@ -1555,7 +1675,12 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, ParenthesizedExpression
             return;
         }
         let needs_parentheses = self.needs_parentheses(f);
-        format_leading_comments_and_open_paren(self.span(), needs_parentheses, f);
+        format_leading_comments_and_open_paren(
+            self.span(),
+            self.leading_comments_start(),
+            needs_parentheses,
+            f,
+        );
         if is_suppressed {
             self.write_suppressed(f);
         } else {
@@ -2412,7 +2537,12 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, Function<'a>> {
             return;
         }
         let needs_parentheses = self.needs_parentheses(f);
-        format_leading_comments_and_open_paren(self.span(), needs_parentheses, f);
+        format_leading_comments_and_open_paren(
+            self.span(),
+            self.leading_comments_start(),
+            needs_parentheses,
+            f,
+        );
         if is_suppressed {
             self.write_suppressed(f);
         } else {
@@ -2515,7 +2645,12 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, ArrowFunctionExpression
             return;
         }
         let needs_parentheses = self.needs_parentheses(f);
-        format_leading_comments_and_open_paren(self.span(), needs_parentheses, f);
+        format_leading_comments_and_open_paren(
+            self.span(),
+            self.leading_comments_start(),
+            needs_parentheses,
+            f,
+        );
         if is_suppressed {
             self.write_suppressed(f);
         } else {
@@ -2535,7 +2670,12 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, YieldExpression<'a>> {
             return;
         }
         let needs_parentheses = self.needs_parentheses(f);
-        format_leading_comments_and_open_paren(self.span(), needs_parentheses, f);
+        format_leading_comments_and_open_paren(
+            self.span(),
+            self.leading_comments_start(),
+            needs_parentheses,
+            f,
+        );
         if is_suppressed {
             self.write_suppressed(f);
         } else {
@@ -2555,7 +2695,12 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, Class<'a>> {
             return;
         }
         let needs_parentheses = self.needs_parentheses(f);
-        format_leading_comments_and_open_paren(self.span(), needs_parentheses, f);
+        format_leading_comments_and_open_paren(
+            self.span(),
+            self.leading_comments_start(),
+            needs_parentheses,
+            f,
+        );
         if is_suppressed {
             self.write_suppressed(f);
         } else {
@@ -2816,7 +2961,12 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, ImportExpression<'a>> {
             return;
         }
         let needs_parentheses = self.needs_parentheses(f);
-        format_leading_comments_and_open_paren(self.span(), needs_parentheses, f);
+        format_leading_comments_and_open_paren(
+            self.span(),
+            self.leading_comments_start(),
+            needs_parentheses,
+            f,
+        );
         if is_suppressed {
             self.write_suppressed(f);
         } else {
@@ -3153,7 +3303,12 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, V8IntrinsicExpression<'
             return;
         }
         let needs_parentheses = self.needs_parentheses(f);
-        format_leading_comments_and_open_paren(self.span(), needs_parentheses, f);
+        format_leading_comments_and_open_paren(
+            self.span(),
+            self.leading_comments_start(),
+            needs_parentheses,
+            f,
+        );
         if is_suppressed {
             self.write_suppressed(f);
         } else {
@@ -3173,7 +3328,12 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, BooleanLiteral> {
             return;
         }
         let needs_parentheses = self.needs_parentheses(f);
-        format_leading_comments_and_open_paren(self.span(), needs_parentheses, f);
+        format_leading_comments_and_open_paren(
+            self.span(),
+            self.leading_comments_start(),
+            needs_parentheses,
+            f,
+        );
         if is_suppressed {
             self.write_suppressed(f);
         } else {
@@ -3193,7 +3353,12 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, NullLiteral> {
             return;
         }
         let needs_parentheses = self.needs_parentheses(f);
-        format_leading_comments_and_open_paren(self.span(), needs_parentheses, f);
+        format_leading_comments_and_open_paren(
+            self.span(),
+            self.leading_comments_start(),
+            needs_parentheses,
+            f,
+        );
         if is_suppressed {
             self.write_suppressed(f);
         } else {
@@ -3213,7 +3378,12 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, NumericLiteral<'a>> {
             return;
         }
         let needs_parentheses = self.needs_parentheses(f);
-        format_leading_comments_and_open_paren(self.span(), needs_parentheses, f);
+        format_leading_comments_and_open_paren(
+            self.span(),
+            self.leading_comments_start(),
+            needs_parentheses,
+            f,
+        );
         if is_suppressed {
             self.write_suppressed(f);
         } else {
@@ -3233,7 +3403,12 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, StringLiteral<'a>> {
             return;
         }
         let needs_parentheses = self.needs_parentheses(f);
-        format_leading_comments_and_open_paren(self.span(), needs_parentheses, f);
+        format_leading_comments_and_open_paren(
+            self.span(),
+            self.leading_comments_start(),
+            needs_parentheses,
+            f,
+        );
         if is_suppressed {
             self.write_suppressed(f);
         } else {
@@ -3253,7 +3428,12 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, BigIntLiteral<'a>> {
             return;
         }
         let needs_parentheses = self.needs_parentheses(f);
-        format_leading_comments_and_open_paren(self.span(), needs_parentheses, f);
+        format_leading_comments_and_open_paren(
+            self.span(),
+            self.leading_comments_start(),
+            needs_parentheses,
+            f,
+        );
         if is_suppressed {
             self.write_suppressed(f);
         } else {
@@ -3273,7 +3453,12 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, RegExpLiteral<'a>> {
             return;
         }
         let needs_parentheses = self.needs_parentheses(f);
-        format_leading_comments_and_open_paren(self.span(), needs_parentheses, f);
+        format_leading_comments_and_open_paren(
+            self.span(),
+            self.leading_comments_start(),
+            needs_parentheses,
+            f,
+        );
         if is_suppressed {
             self.write_suppressed(f);
         } else {
@@ -4373,7 +4558,12 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, TSConditionalType<'a>> 
             return;
         }
         let needs_parentheses = self.needs_parentheses(f);
-        format_leading_comments_and_open_paren(self.span(), needs_parentheses, f);
+        format_leading_comments_and_open_paren(
+            self.span(),
+            self.leading_comments_start(),
+            needs_parentheses,
+            f,
+        );
         if is_suppressed {
             self.write_suppressed(f);
         } else {
@@ -4414,7 +4604,12 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, TSIntersectionType<'a>>
             return;
         }
         let needs_parentheses = self.needs_parentheses(f);
-        format_leading_comments_and_open_paren(self.span(), needs_parentheses, f);
+        format_leading_comments_and_open_paren(
+            self.span(),
+            self.leading_comments_start(),
+            needs_parentheses,
+            f,
+        );
         if is_suppressed {
             self.write_suppressed(f);
         } else {
@@ -4447,7 +4642,12 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, TSTypeOperator<'a>> {
             return;
         }
         let needs_parentheses = self.needs_parentheses(f);
-        format_leading_comments_and_open_paren(self.span(), needs_parentheses, f);
+        format_leading_comments_and_open_paren(
+            self.span(),
+            self.leading_comments_start(),
+            needs_parentheses,
+            f,
+        );
         if is_suppressed {
             self.write_suppressed(f);
         } else {
@@ -5214,7 +5414,12 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, TSInferType<'a>> {
             return;
         }
         let needs_parentheses = self.needs_parentheses(f);
-        format_leading_comments_and_open_paren(self.span(), needs_parentheses, f);
+        format_leading_comments_and_open_paren(
+            self.span(),
+            self.leading_comments_start(),
+            needs_parentheses,
+            f,
+        );
         if is_suppressed {
             self.write_suppressed(f);
         } else {
@@ -5234,7 +5439,12 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, TSTypeQuery<'a>> {
             return;
         }
         let needs_parentheses = self.needs_parentheses(f);
-        format_leading_comments_and_open_paren(self.span(), needs_parentheses, f);
+        format_leading_comments_and_open_paren(
+            self.span(),
+            self.leading_comments_start(),
+            needs_parentheses,
+            f,
+        );
         if is_suppressed {
             self.write_suppressed(f);
         } else {
@@ -5341,7 +5551,12 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, TSFunctionType<'a>> {
             return;
         }
         let needs_parentheses = self.needs_parentheses(f);
-        format_leading_comments_and_open_paren(self.span(), needs_parentheses, f);
+        format_leading_comments_and_open_paren(
+            self.span(),
+            self.leading_comments_start(),
+            needs_parentheses,
+            f,
+        );
         if is_suppressed {
             self.write_suppressed(f);
         } else {
@@ -5361,7 +5576,12 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, TSConstructorType<'a>> 
             return;
         }
         let needs_parentheses = self.needs_parentheses(f);
-        format_leading_comments_and_open_paren(self.span(), needs_parentheses, f);
+        format_leading_comments_and_open_paren(
+            self.span(),
+            self.leading_comments_start(),
+            needs_parentheses,
+            f,
+        );
         if is_suppressed {
             self.write_suppressed(f);
         } else {
@@ -5407,7 +5627,12 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, TSAsExpression<'a>> {
             return;
         }
         let needs_parentheses = self.needs_parentheses(f);
-        format_leading_comments_and_open_paren(self.span(), needs_parentheses, f);
+        format_leading_comments_and_open_paren(
+            self.span(),
+            self.leading_comments_start(),
+            needs_parentheses,
+            f,
+        );
         if is_suppressed {
             self.write_suppressed(f);
         } else {
@@ -5427,7 +5652,12 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, TSSatisfiesExpression<'
             return;
         }
         let needs_parentheses = self.needs_parentheses(f);
-        format_leading_comments_and_open_paren(self.span(), needs_parentheses, f);
+        format_leading_comments_and_open_paren(
+            self.span(),
+            self.leading_comments_start(),
+            needs_parentheses,
+            f,
+        );
         if is_suppressed {
             self.write_suppressed(f);
         } else {
@@ -5447,7 +5677,12 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, TSTypeAssertion<'a>> {
             return;
         }
         let needs_parentheses = self.needs_parentheses(f);
-        format_leading_comments_and_open_paren(self.span(), needs_parentheses, f);
+        format_leading_comments_and_open_paren(
+            self.span(),
+            self.leading_comments_start(),
+            needs_parentheses,
+            f,
+        );
         if is_suppressed {
             self.write_suppressed(f);
         } else {
@@ -5533,7 +5768,12 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, TSNonNullExpression<'a>
             return;
         }
         let needs_parentheses = self.needs_parentheses(f);
-        format_leading_comments_and_open_paren(self.span(), needs_parentheses, f);
+        format_leading_comments_and_open_paren(
+            self.span(),
+            self.leading_comments_start(),
+            needs_parentheses,
+            f,
+        );
         if is_suppressed {
             self.write_suppressed(f);
         } else {
@@ -5592,7 +5832,12 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, TSInstantiationExpressi
             return;
         }
         let needs_parentheses = self.needs_parentheses(f);
-        format_leading_comments_and_open_paren(self.span(), needs_parentheses, f);
+        format_leading_comments_and_open_paren(
+            self.span(),
+            self.leading_comments_start(),
+            needs_parentheses,
+            f,
+        );
         if is_suppressed {
             self.write_suppressed(f);
         } else {
@@ -5651,7 +5896,12 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, MissingExpression> {
             return;
         }
         let needs_parentheses = self.needs_parentheses(f);
-        format_leading_comments_and_open_paren(self.span(), needs_parentheses, f);
+        format_leading_comments_and_open_paren(
+            self.span(),
+            self.leading_comments_start(),
+            needs_parentheses,
+            f,
+        );
         if is_suppressed {
             self.write_suppressed(f);
         } else {
