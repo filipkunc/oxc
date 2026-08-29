@@ -1,5 +1,6 @@
 use oxc_allocator::{ArenaBox, ArenaVec};
 use oxc_ast::ast::*;
+use oxc_data_structures::branch_hints::unlikely;
 use oxc_span::{GetSpan, Span};
 
 use super::VariableDeclarationParent;
@@ -135,7 +136,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         self.lexer.trivia_builder.mark_current_pure_comment_not_applied();
         let init = if !self.eat(Kind::Eq) {
             None
-        } else if self.options.mode == ParseMode::Editor
+        } else if unlikely(self.options.mode == ParseMode::Editor)
             && matches!(self.cur_kind(), Kind::Comma | Kind::Semicolon | Kind::RCurly | Kind::Eof)
         {
             let span = Span::empty(self.cur_start());
