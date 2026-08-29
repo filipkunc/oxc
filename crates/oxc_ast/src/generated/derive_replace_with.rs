@@ -6,6 +6,7 @@ use oxc_allocator::ReplaceWith;
 use crate::ast::js::*;
 use crate::ast::jsx::*;
 use crate::ast::literal::*;
+use crate::ast::recovery::*;
 use crate::ast::ts::*;
 
 impl<'a> ReplaceWith<'a> for Program<'a> {}
@@ -483,3 +484,5 @@ impl<'a> ReplaceWith<'a> for JSDocNullableType<'a> {}
 impl<'a> ReplaceWith<'a> for JSDocNonNullableType<'a> {}
 
 impl ReplaceWith<'_> for JSDocUnknownType {}
+
+impl ReplaceWith<'_> for MissingExpression {}

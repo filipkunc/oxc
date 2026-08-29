@@ -921,6 +921,11 @@ pub trait VisitJsMut<'a>: Sized {
     }
 
     #[inline]
+    fn visit_missing_expression(&mut self, it: &mut MissingExpression) {
+        walk_missing_expression(self, it);
+    }
+
+    #[inline]
     fn visit_span(&mut self, it: &mut Span) {
         walk_span(self, it);
     }
@@ -1118,6 +1123,7 @@ pub mod walk_js_mut {
                 visitor.visit_ts_instantiation_expression(it)
             }
             Expression::V8IntrinsicExpression(it) => visitor.visit_v8_intrinsic_expression(it),
+            Expression::MissingExpression(it) => visitor.visit_missing_expression(it),
             match_member_expression!(Expression) => {
                 visitor.visit_member_expression(it.to_member_expression_mut())
             }
@@ -3355,6 +3361,17 @@ pub mod walk_js_mut {
         visitor.enter_node(kind);
         visitor.visit_span(&mut it.span);
         visitor.visit_expression(&mut it.expression);
+        visitor.leave_node(kind);
+    }
+
+    #[inline]
+    pub fn walk_missing_expression<'a, V: VisitJsMut<'a>>(
+        visitor: &mut V,
+        it: &mut MissingExpression,
+    ) {
+        let kind = AstType::MissingExpression;
+        visitor.enter_node(kind);
+        visitor.visit_span(&mut it.span);
         visitor.leave_node(kind);
     }
 

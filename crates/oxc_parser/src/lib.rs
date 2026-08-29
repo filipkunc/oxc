@@ -193,11 +193,26 @@ pub struct ParserReturn<'a> {
     pub is_flow_language: bool,
 }
 
+/// Controls whether the parser preserves an AST for selected incomplete editor input.
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+pub enum ParseMode {
+    /// Parse source using Oxc's standard recovery behavior.
+    #[default]
+    Normal,
+    /// Preserve explicit placeholder nodes for supported incomplete constructs.
+    Editor,
+}
+
 /// Parse options
 ///
 /// You may provide options to the [`Parser`] using [`Parser::with_options`].
 #[derive(Debug, Clone, Copy)]
 pub struct ParseOptions {
+    /// Parsing behavior for incomplete source.
+    ///
+    /// Default: [`ParseMode::Normal`]
+    pub mode: ParseMode,
+
     /// Whether to parse regular expressions or not.
     ///
     /// Default: `false`
@@ -250,6 +265,7 @@ pub struct ParseOptions {
 impl Default for ParseOptions {
     fn default() -> Self {
         Self {
+            mode: ParseMode::Normal,
             #[cfg(feature = "regular_expression")]
             parse_regular_expression: false,
             allow_return_outside_function: false,

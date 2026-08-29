@@ -186,6 +186,7 @@ impl<'a> ArrayExpressionElement<'a> {
                 | Self::TSNonNullExpression(_)
                 | Self::TSInstantiationExpression(_)
                 | Self::V8IntrinsicExpression(_)
+                | Self::MissingExpression(_)
                 | Self::ComputedMemberExpression(_)
                 | Self::StaticMemberExpression(_)
                 | Self::PrivateFieldExpression(_)
@@ -342,6 +343,7 @@ impl<'a> TryFrom<ArrayExpressionElement<'a>> for Expression<'a> {
             ArrayExpressionElement::V8IntrinsicExpression(o) => {
                 Ok(Expression::V8IntrinsicExpression(o))
             }
+            ArrayExpressionElement::MissingExpression(o) => Ok(Expression::MissingExpression(o)),
             ArrayExpressionElement::ComputedMemberExpression(o) => {
                 Ok(Expression::ComputedMemberExpression(o))
             }
@@ -418,6 +420,7 @@ impl<'a> From<Expression<'a>> for ArrayExpressionElement<'a> {
             Expression::V8IntrinsicExpression(o) => {
                 ArrayExpressionElement::V8IntrinsicExpression(o)
             }
+            Expression::MissingExpression(o) => ArrayExpressionElement::MissingExpression(o),
             Expression::ComputedMemberExpression(o) => {
                 ArrayExpressionElement::ComputedMemberExpression(o)
             }
@@ -613,6 +616,7 @@ impl<'a> PropertyKey<'a> {
                 | Self::TSNonNullExpression(_)
                 | Self::TSInstantiationExpression(_)
                 | Self::V8IntrinsicExpression(_)
+                | Self::MissingExpression(_)
                 | Self::ComputedMemberExpression(_)
                 | Self::StaticMemberExpression(_)
                 | Self::PrivateFieldExpression(_)
@@ -751,6 +755,7 @@ impl<'a> TryFrom<PropertyKey<'a>> for Expression<'a> {
                 Ok(Expression::TSInstantiationExpression(o))
             }
             PropertyKey::V8IntrinsicExpression(o) => Ok(Expression::V8IntrinsicExpression(o)),
+            PropertyKey::MissingExpression(o) => Ok(Expression::MissingExpression(o)),
             PropertyKey::ComputedMemberExpression(o) => Ok(Expression::ComputedMemberExpression(o)),
             PropertyKey::StaticMemberExpression(o) => Ok(Expression::StaticMemberExpression(o)),
             PropertyKey::PrivateFieldExpression(o) => Ok(Expression::PrivateFieldExpression(o)),
@@ -807,6 +812,7 @@ impl<'a> From<Expression<'a>> for PropertyKey<'a> {
             Expression::TSNonNullExpression(o) => PropertyKey::TSNonNullExpression(o),
             Expression::TSInstantiationExpression(o) => PropertyKey::TSInstantiationExpression(o),
             Expression::V8IntrinsicExpression(o) => PropertyKey::V8IntrinsicExpression(o),
+            Expression::MissingExpression(o) => PropertyKey::MissingExpression(o),
             Expression::ComputedMemberExpression(o) => PropertyKey::ComputedMemberExpression(o),
             Expression::StaticMemberExpression(o) => PropertyKey::StaticMemberExpression(o),
             Expression::PrivateFieldExpression(o) => PropertyKey::PrivateFieldExpression(o),
@@ -992,6 +998,7 @@ impl<'a> Argument<'a> {
                 | Self::TSNonNullExpression(_)
                 | Self::TSInstantiationExpression(_)
                 | Self::V8IntrinsicExpression(_)
+                | Self::MissingExpression(_)
                 | Self::ComputedMemberExpression(_)
                 | Self::StaticMemberExpression(_)
                 | Self::PrivateFieldExpression(_)
@@ -1128,6 +1135,7 @@ impl<'a> TryFrom<Argument<'a>> for Expression<'a> {
             Argument::TSNonNullExpression(o) => Ok(Expression::TSNonNullExpression(o)),
             Argument::TSInstantiationExpression(o) => Ok(Expression::TSInstantiationExpression(o)),
             Argument::V8IntrinsicExpression(o) => Ok(Expression::V8IntrinsicExpression(o)),
+            Argument::MissingExpression(o) => Ok(Expression::MissingExpression(o)),
             Argument::ComputedMemberExpression(o) => Ok(Expression::ComputedMemberExpression(o)),
             Argument::StaticMemberExpression(o) => Ok(Expression::StaticMemberExpression(o)),
             Argument::PrivateFieldExpression(o) => Ok(Expression::PrivateFieldExpression(o)),
@@ -1184,6 +1192,7 @@ impl<'a> From<Expression<'a>> for Argument<'a> {
             Expression::TSNonNullExpression(o) => Argument::TSNonNullExpression(o),
             Expression::TSInstantiationExpression(o) => Argument::TSInstantiationExpression(o),
             Expression::V8IntrinsicExpression(o) => Argument::V8IntrinsicExpression(o),
+            Expression::MissingExpression(o) => Argument::MissingExpression(o),
             Expression::ComputedMemberExpression(o) => Argument::ComputedMemberExpression(o),
             Expression::StaticMemberExpression(o) => Argument::StaticMemberExpression(o),
             Expression::PrivateFieldExpression(o) => Argument::PrivateFieldExpression(o),
@@ -2959,6 +2968,7 @@ impl<'a> ForStatementInit<'a> {
                 | Self::TSNonNullExpression(_)
                 | Self::TSInstantiationExpression(_)
                 | Self::V8IntrinsicExpression(_)
+                | Self::MissingExpression(_)
                 | Self::ComputedMemberExpression(_)
                 | Self::StaticMemberExpression(_)
                 | Self::PrivateFieldExpression(_)
@@ -3103,6 +3113,7 @@ impl<'a> TryFrom<ForStatementInit<'a>> for Expression<'a> {
                 Ok(Expression::TSInstantiationExpression(o))
             }
             ForStatementInit::V8IntrinsicExpression(o) => Ok(Expression::V8IntrinsicExpression(o)),
+            ForStatementInit::MissingExpression(o) => Ok(Expression::MissingExpression(o)),
             ForStatementInit::ComputedMemberExpression(o) => {
                 Ok(Expression::ComputedMemberExpression(o))
             }
@@ -3169,6 +3180,7 @@ impl<'a> From<Expression<'a>> for ForStatementInit<'a> {
                 ForStatementInit::TSInstantiationExpression(o)
             }
             Expression::V8IntrinsicExpression(o) => ForStatementInit::V8IntrinsicExpression(o),
+            Expression::MissingExpression(o) => ForStatementInit::MissingExpression(o),
             Expression::ComputedMemberExpression(o) => {
                 ForStatementInit::ComputedMemberExpression(o)
             }
@@ -3955,6 +3967,7 @@ impl<'a> ArrowFunctionBody<'a> {
                 | Self::TSNonNullExpression(_)
                 | Self::TSInstantiationExpression(_)
                 | Self::V8IntrinsicExpression(_)
+                | Self::MissingExpression(_)
                 | Self::ComputedMemberExpression(_)
                 | Self::StaticMemberExpression(_)
                 | Self::PrivateFieldExpression(_)
@@ -4099,6 +4112,7 @@ impl<'a> TryFrom<ArrowFunctionBody<'a>> for Expression<'a> {
                 Ok(Expression::TSInstantiationExpression(o))
             }
             ArrowFunctionBody::V8IntrinsicExpression(o) => Ok(Expression::V8IntrinsicExpression(o)),
+            ArrowFunctionBody::MissingExpression(o) => Ok(Expression::MissingExpression(o)),
             ArrowFunctionBody::ComputedMemberExpression(o) => {
                 Ok(Expression::ComputedMemberExpression(o))
             }
@@ -4165,6 +4179,7 @@ impl<'a> From<Expression<'a>> for ArrowFunctionBody<'a> {
                 ArrowFunctionBody::TSInstantiationExpression(o)
             }
             Expression::V8IntrinsicExpression(o) => ArrowFunctionBody::V8IntrinsicExpression(o),
+            Expression::MissingExpression(o) => ArrowFunctionBody::MissingExpression(o),
             Expression::ComputedMemberExpression(o) => {
                 ArrowFunctionBody::ComputedMemberExpression(o)
             }
@@ -4356,6 +4371,7 @@ impl<'a> ExportDefaultDeclarationKind<'a> {
                 | Self::TSNonNullExpression(_)
                 | Self::TSInstantiationExpression(_)
                 | Self::V8IntrinsicExpression(_)
+                | Self::MissingExpression(_)
                 | Self::ComputedMemberExpression(_)
                 | Self::StaticMemberExpression(_)
                 | Self::PrivateFieldExpression(_)
@@ -4526,6 +4542,9 @@ impl<'a> TryFrom<ExportDefaultDeclarationKind<'a>> for Expression<'a> {
             ExportDefaultDeclarationKind::V8IntrinsicExpression(o) => {
                 Ok(Expression::V8IntrinsicExpression(o))
             }
+            ExportDefaultDeclarationKind::MissingExpression(o) => {
+                Ok(Expression::MissingExpression(o))
+            }
             ExportDefaultDeclarationKind::ComputedMemberExpression(o) => {
                 Ok(Expression::ComputedMemberExpression(o))
             }
@@ -4612,6 +4631,7 @@ impl<'a> From<Expression<'a>> for ExportDefaultDeclarationKind<'a> {
             Expression::V8IntrinsicExpression(o) => {
                 ExportDefaultDeclarationKind::V8IntrinsicExpression(o)
             }
+            Expression::MissingExpression(o) => ExportDefaultDeclarationKind::MissingExpression(o),
             Expression::ComputedMemberExpression(o) => {
                 ExportDefaultDeclarationKind::ComputedMemberExpression(o)
             }
@@ -4807,6 +4827,7 @@ impl<'a> JSXExpression<'a> {
                 | Self::TSNonNullExpression(_)
                 | Self::TSInstantiationExpression(_)
                 | Self::V8IntrinsicExpression(_)
+                | Self::MissingExpression(_)
                 | Self::ComputedMemberExpression(_)
                 | Self::StaticMemberExpression(_)
                 | Self::PrivateFieldExpression(_)
@@ -4947,6 +4968,7 @@ impl<'a> TryFrom<JSXExpression<'a>> for Expression<'a> {
                 Ok(Expression::TSInstantiationExpression(o))
             }
             JSXExpression::V8IntrinsicExpression(o) => Ok(Expression::V8IntrinsicExpression(o)),
+            JSXExpression::MissingExpression(o) => Ok(Expression::MissingExpression(o)),
             JSXExpression::ComputedMemberExpression(o) => {
                 Ok(Expression::ComputedMemberExpression(o))
             }
@@ -5005,6 +5027,7 @@ impl<'a> From<Expression<'a>> for JSXExpression<'a> {
             Expression::TSNonNullExpression(o) => JSXExpression::TSNonNullExpression(o),
             Expression::TSInstantiationExpression(o) => JSXExpression::TSInstantiationExpression(o),
             Expression::V8IntrinsicExpression(o) => JSXExpression::V8IntrinsicExpression(o),
+            Expression::MissingExpression(o) => JSXExpression::MissingExpression(o),
             Expression::ComputedMemberExpression(o) => JSXExpression::ComputedMemberExpression(o),
             Expression::StaticMemberExpression(o) => JSXExpression::StaticMemberExpression(o),
             Expression::PrivateFieldExpression(o) => JSXExpression::PrivateFieldExpression(o),
@@ -5536,6 +5559,7 @@ macro_rules! match_expression {
             | $ty::TSNonNullExpression(_)
             | $ty::TSInstantiationExpression(_)
             | $ty::V8IntrinsicExpression(_)
+            | $ty::MissingExpression(_)
             | $ty::ComputedMemberExpression(_)
             | $ty::StaticMemberExpression(_)
             | $ty::PrivateFieldExpression(_)

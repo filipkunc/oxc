@@ -247,6 +247,7 @@ pub fn parse_for_format<'a>(
         // The formatter does not use `Ident` hashes, but `detect_code_removal` runs semantic
         // analysis on this AST, and semantic requires hashed `Ident`s.
         enable_ident_hashes: cfg!(feature = "detect_code_removal"),
+        ..ParseOptions::default()
     };
     Parser::new(allocator, source_text, source_type).with_options(options).parse()
 }

@@ -300,6 +300,7 @@ impl<'a> AstKind<'a> {
             Expression::TSNonNullExpression(e) => Self::TSNonNullExpression(e),
             Expression::TSInstantiationExpression(e) => Self::TSInstantiationExpression(e),
             Expression::V8IntrinsicExpression(e) => Self::V8IntrinsicExpression(e),
+            Expression::MissingExpression(e) => Self::MissingExpression(e),
         }
     }
 
@@ -382,6 +383,7 @@ impl AstKind<'_> {
 
         match self {
             Self::Program(_) => "Program".into(),
+            Self::MissingExpression(_) => "MissingExpression".into(),
             Self::Directive(d) => d.directive.as_ref().into(),
             Self::Hashbang(_) => "Hashbang".into(),
             Self::BlockStatement(_) => "BlockStatement".into(),

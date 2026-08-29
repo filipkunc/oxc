@@ -10,6 +10,7 @@ use oxc_allocator::{Allocator, Dummy};
 use crate::ast::js::*;
 use crate::ast::jsx::*;
 use crate::ast::literal::*;
+use crate::ast::recovery::*;
 use crate::ast::ts::*;
 
 impl<'a> Dummy<'a> for Program<'a> {
@@ -3274,6 +3275,15 @@ impl<'a> Dummy<'a> for JSDocNonNullableType<'a> {
 
 impl<'a> Dummy<'a> for JSDocUnknownType {
     /// Create a dummy [`JSDocUnknownType`].
+    ///
+    /// Does not allocate any data into arena.
+    fn dummy(allocator: &'a Allocator) -> Self {
+        Self { node_id: Dummy::dummy(allocator), span: Dummy::dummy(allocator) }
+    }
+}
+
+impl<'a> Dummy<'a> for MissingExpression {
+    /// Create a dummy [`MissingExpression`].
     ///
     /// Does not allocate any data into arena.
     fn dummy(allocator: &'a Allocator) -> Self {

@@ -42,6 +42,7 @@ pub struct OxcRunOptions {
 #[derive(Default, Clone)]
 pub struct OxcParserOptions {
     pub extension: String,
+    pub editor_recovery: bool,
     pub allow_return_outside_function: bool,
     pub preserve_parens: bool,
     pub allow_v8_intrinsics: bool,

@@ -30,6 +30,7 @@ export declare class Oxc {
   ast: object
   astJson: string
   ir: string
+  hasRecovery: boolean
   controlFlowGraph: string
   symbolsJson: string
   scopeText: string
@@ -153,6 +154,7 @@ export interface OxcOptions {
 
 export interface OxcParserOptions {
   extension: string
+  editorRecovery: boolean
   allowReturnOutsideFunction: boolean
   preserveParens: boolean
   allowV8Intrinsics: boolean

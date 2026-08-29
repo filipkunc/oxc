@@ -90,6 +90,7 @@ impl<'a> Visit<'a> for ChildScopeCollector {
                 // `ThisExpression`
                 // `ImportMeta`
                 // `NewTarget`
+                // `MissingExpression`
             }
         }
     }
@@ -201,6 +202,7 @@ impl<'a> Visit<'a> for ChildScopeCollector {
                 // `ThisExpression`
                 // `ImportMeta`
                 // `NewTarget`
+                // `MissingExpression`
             }
         }
     }
@@ -276,6 +278,7 @@ impl<'a> Visit<'a> for ChildScopeCollector {
                 // `ThisExpression`
                 // `ImportMeta`
                 // `NewTarget`
+                // `MissingExpression`
             }
         }
     }
@@ -400,6 +403,7 @@ impl<'a> Visit<'a> for ChildScopeCollector {
                 // `ThisExpression`
                 // `ImportMeta`
                 // `NewTarget`
+                // `MissingExpression`
             }
         }
     }
@@ -799,6 +803,7 @@ impl<'a> Visit<'a> for ChildScopeCollector {
                 // `ThisExpression`
                 // `ImportMeta`
                 // `NewTarget`
+                // `MissingExpression`
             }
         }
     }
@@ -1063,6 +1068,7 @@ impl<'a> Visit<'a> for ChildScopeCollector {
                 // `ThisExpression`
                 // `ImportMeta`
                 // `NewTarget`
+                // `MissingExpression`
             }
         }
     }
@@ -1325,6 +1331,7 @@ impl<'a> Visit<'a> for ChildScopeCollector {
                 // `ThisExpression`
                 // `ImportMeta`
                 // `NewTarget`
+                // `MissingExpression`
             }
         }
     }
@@ -1486,6 +1493,7 @@ impl<'a> Visit<'a> for ChildScopeCollector {
                 // `ThisExpression`
                 // `ImportMeta`
                 // `NewTarget`
+                // `MissingExpression`
             }
         }
     }
@@ -2114,6 +2122,11 @@ impl<'a> Visit<'a> for ChildScopeCollector {
 
     #[inline(always)]
     fn visit_js_doc_unknown_type(&mut self, it: &JSDocUnknownType) {
+        // Struct does not contain a scope. Halt traversal.
+    }
+
+    #[inline(always)]
+    fn visit_missing_expression(&mut self, it: &MissingExpression) {
         // Struct does not contain a scope. Halt traversal.
     }
 

@@ -219,6 +219,7 @@ pub enum AstNodes<'a> {
     JSDocNullableType(&'a AstNode<'a, JSDocNullableType<'a>>),
     JSDocNonNullableType(&'a AstNode<'a, JSDocNonNullableType<'a>>),
     JSDocUnknownType(&'a AstNode<'a, JSDocUnknownType>),
+    MissingExpression(&'a AstNode<'a, MissingExpression>),
 }
 impl AstNodes<'_> {
     /// Returns the span of this AST node.
@@ -422,6 +423,7 @@ impl AstNodes<'_> {
             Self::JSDocNullableType(n) => n.span(),
             Self::JSDocNonNullableType(n) => n.span(),
             Self::JSDocUnknownType(n) => n.span(),
+            Self::MissingExpression(n) => n.span(),
         }
     }
     /// Returns the parent of this AST node.
@@ -625,6 +627,7 @@ impl AstNodes<'_> {
             Self::JSDocNullableType(n) => n.parent(),
             Self::JSDocNonNullableType(n) => n.parent(),
             Self::JSDocUnknownType(n) => n.parent(),
+            Self::MissingExpression(n) => n.parent(),
         }
     }
     #[inline]
@@ -823,6 +826,7 @@ impl AstNodes<'_> {
             Self::JSDocNullableType(_) => "JSDocNullableType",
             Self::JSDocNonNullableType(_) => "JSDocNonNullableType",
             Self::JSDocUnknownType(_) => "JSDocUnknownType",
+            Self::MissingExpression(_) => "MissingExpression",
         }
     }
 }
@@ -1219,6 +1223,14 @@ impl<'a> AstNode<'a, Expression<'a>> {
             }
             Expression::V8IntrinsicExpression(s) => {
                 AstNodes::V8IntrinsicExpression(self.allocator.alloc(AstNode {
+                    inner: s.as_ref(),
+                    parent,
+                    allocator: self.allocator,
+                    following_span_start: self.following_span_start,
+                }))
+            }
+            Expression::MissingExpression(s) => {
+                AstNodes::MissingExpression(self.allocator.alloc(AstNode {
                     inner: s.as_ref(),
                     parent,
                     allocator: self.allocator,
@@ -10706,6 +10718,22 @@ impl<'a> AstNode<'a, JSDocNonNullableType<'a>> {
 }
 
 impl<'a> AstNode<'a, JSDocUnknownType> {
+    #[inline]
+    pub fn node_id(&self) -> NodeId {
+        self.inner.node_id()
+    }
+
+    pub fn format_leading_comments(&self, f: &mut JsFormatter<'_, 'a>) {
+        format_leading_comments(self.span()).fmt(f);
+    }
+
+    pub fn format_trailing_comments(&self, f: &mut JsFormatter<'_, 'a>) {
+        format_trailing_comments(self.parent.span(), self.inner.span(), self.following_span_start)
+            .fmt(f);
+    }
+}
+
+impl<'a> AstNode<'a, MissingExpression> {
     #[inline]
     pub fn node_id(&self) -> NodeId {
         self.inner.node_id()

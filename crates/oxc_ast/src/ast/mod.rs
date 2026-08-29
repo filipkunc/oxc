@@ -184,12 +184,14 @@ pub(crate) mod comment;
 pub(crate) mod js;
 pub(crate) mod jsx;
 pub(crate) mod literal;
+pub(crate) mod recovery;
 pub(crate) mod ts;
 
 pub use comment::*;
 pub use js::*;
 pub use jsx::*;
 pub use literal::*;
+pub use recovery::*;
 pub use ts::*;
 
 // `match_*!` macros are `#[macro_export]`ed at the crate root.

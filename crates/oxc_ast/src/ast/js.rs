@@ -168,6 +168,12 @@ pub enum Expression<'a> {
     /// See [`V8IntrinsicExpression`] for AST node details.
     V8IntrinsicExpression(Box<'a, V8IntrinsicExpression<'a>>) = 40,
 
+    /// Placeholder inserted by editor recovery when an expression is missing.
+    ///
+    /// This is an internal Oxc node and is intentionally not part of ESTree output.
+    #[estree(skip)]
+    MissingExpression(Box<'a, MissingExpression>) = 41,
+
     // `MemberExpression` variants added here by `#[ast]` macro
     INHERIT(MemberExpression<'a>),
 }

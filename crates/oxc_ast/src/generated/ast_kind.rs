@@ -8,7 +8,7 @@ use oxc_syntax::node::NodeId;
 use crate::ast::*;
 
 /// The largest integer value that can be mapped to an `AstType`/`AstKind` enum variant.
-pub const AST_TYPE_MAX: u8 = 191;
+pub const AST_TYPE_MAX: u8 = 192;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[repr(u8)]
@@ -205,6 +205,7 @@ pub enum AstType {
     JSDocNullableType = 189,
     JSDocNonNullableType = 190,
     JSDocUnknownType = 191,
+    MissingExpression = 192,
 }
 
 /// Untyped AST Node Kind
@@ -422,6 +423,7 @@ pub enum AstKind<'a> {
     JSDocNullableType(&'a JSDocNullableType<'a>) = AstType::JSDocNullableType as u8,
     JSDocNonNullableType(&'a JSDocNonNullableType<'a>) = AstType::JSDocNonNullableType as u8,
     JSDocUnknownType(&'a JSDocUnknownType) = AstType::JSDocUnknownType as u8,
+    MissingExpression(&'a MissingExpression) = AstType::MissingExpression as u8,
 }
 
 impl AstKind<'_> {
@@ -622,6 +624,7 @@ impl AstKind<'_> {
             Self::JSDocNullableType(it) => it.node_id(),
             Self::JSDocNonNullableType(it) => it.node_id(),
             Self::JSDocUnknownType(it) => it.node_id(),
+            Self::MissingExpression(it) => it.node_id(),
         }
     }
 
@@ -822,6 +825,7 @@ impl AstKind<'_> {
             Self::JSDocNullableType(it) => it.set_node_id(node_id),
             Self::JSDocNonNullableType(it) => it.set_node_id(node_id),
             Self::JSDocUnknownType(it) => it.set_node_id(node_id),
+            Self::MissingExpression(it) => it.set_node_id(node_id),
         }
     }
 }
@@ -1024,6 +1028,7 @@ impl GetSpan for AstKind<'_> {
             Self::JSDocNullableType(it) => it.span(),
             Self::JSDocNonNullableType(it) => it.span(),
             Self::JSDocUnknownType(it) => it.span(),
+            Self::MissingExpression(it) => it.span(),
         }
     }
 }
@@ -1227,6 +1232,7 @@ impl GetAddress for AstKind<'_> {
             Self::JSDocNullableType(it) => it.unstable_address(),
             Self::JSDocNonNullableType(it) => it.unstable_address(),
             Self::JSDocUnknownType(it) => it.unstable_address(),
+            Self::MissingExpression(it) => it.unstable_address(),
         }
     }
 }
@@ -2200,5 +2206,10 @@ impl<'a> AstKind<'a> {
     #[inline]
     pub fn as_js_doc_unknown_type(self) -> Option<&'a JSDocUnknownType> {
         if let Self::JSDocUnknownType(v) = self { Some(v) } else { None }
+    }
+
+    #[inline]
+    pub fn as_missing_expression(self) -> Option<&'a MissingExpression> {
+        if let Self::MissingExpression(v) = self { Some(v) } else { None }
     }
 }

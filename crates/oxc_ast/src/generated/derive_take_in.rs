@@ -8,6 +8,7 @@ use oxc_allocator::TakeIn;
 use crate::ast::js::*;
 use crate::ast::jsx::*;
 use crate::ast::literal::*;
+use crate::ast::recovery::*;
 use crate::ast::ts::*;
 
 impl<'a> TakeIn<'a> for Program<'a> {}
@@ -485,3 +486,5 @@ impl<'a> TakeIn<'a> for JSDocNullableType<'a> {}
 impl<'a> TakeIn<'a> for JSDocNonNullableType<'a> {}
 
 impl<'a> TakeIn<'a> for JSDocUnknownType {}
+
+impl<'a> TakeIn<'a> for MissingExpression {}

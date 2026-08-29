@@ -8,6 +8,7 @@ use oxc_span::{GetSpanMut, Span};
 use crate::ast::js::*;
 use crate::ast::jsx::*;
 use crate::ast::literal::*;
+use crate::ast::recovery::*;
 use crate::ast::ts::*;
 
 impl GetSpanMut for Program<'_> {
@@ -61,6 +62,7 @@ impl GetSpanMut for Expression<'_> {
             Self::TSNonNullExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::TSInstantiationExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::V8IntrinsicExpression(it) => GetSpanMut::span_mut(&mut **it),
+            Self::MissingExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::ComputedMemberExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::StaticMemberExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::PrivateFieldExpression(it) => GetSpanMut::span_mut(&mut **it),
@@ -156,6 +158,7 @@ impl GetSpanMut for ArrayExpressionElement<'_> {
             Self::TSNonNullExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::TSInstantiationExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::V8IntrinsicExpression(it) => GetSpanMut::span_mut(&mut **it),
+            Self::MissingExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::ComputedMemberExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::StaticMemberExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::PrivateFieldExpression(it) => GetSpanMut::span_mut(&mut **it),
@@ -239,6 +242,7 @@ impl GetSpanMut for PropertyKey<'_> {
             Self::TSNonNullExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::TSInstantiationExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::V8IntrinsicExpression(it) => GetSpanMut::span_mut(&mut **it),
+            Self::MissingExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::ComputedMemberExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::StaticMemberExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::PrivateFieldExpression(it) => GetSpanMut::span_mut(&mut **it),
@@ -378,6 +382,7 @@ impl GetSpanMut for Argument<'_> {
             Self::TSNonNullExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::TSInstantiationExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::V8IntrinsicExpression(it) => GetSpanMut::span_mut(&mut **it),
+            Self::MissingExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::ComputedMemberExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::StaticMemberExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::PrivateFieldExpression(it) => GetSpanMut::span_mut(&mut **it),
@@ -773,6 +778,7 @@ impl GetSpanMut for ForStatementInit<'_> {
             Self::TSNonNullExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::TSInstantiationExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::V8IntrinsicExpression(it) => GetSpanMut::span_mut(&mut **it),
+            Self::MissingExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::ComputedMemberExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::StaticMemberExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::PrivateFieldExpression(it) => GetSpanMut::span_mut(&mut **it),
@@ -1022,6 +1028,7 @@ impl GetSpanMut for ArrowFunctionBody<'_> {
             Self::TSNonNullExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::TSInstantiationExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::V8IntrinsicExpression(it) => GetSpanMut::span_mut(&mut **it),
+            Self::MissingExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::ComputedMemberExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::StaticMemberExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::PrivateFieldExpression(it) => GetSpanMut::span_mut(&mut **it),
@@ -1276,6 +1283,7 @@ impl GetSpanMut for ExportDefaultDeclarationKind<'_> {
             Self::TSNonNullExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::TSInstantiationExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::V8IntrinsicExpression(it) => GetSpanMut::span_mut(&mut **it),
+            Self::MissingExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::ComputedMemberExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::StaticMemberExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::PrivateFieldExpression(it) => GetSpanMut::span_mut(&mut **it),
@@ -1472,6 +1480,7 @@ impl GetSpanMut for JSXExpression<'_> {
             Self::TSNonNullExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::TSInstantiationExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::V8IntrinsicExpression(it) => GetSpanMut::span_mut(&mut **it),
+            Self::MissingExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::ComputedMemberExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::StaticMemberExpression(it) => GetSpanMut::span_mut(&mut **it),
             Self::PrivateFieldExpression(it) => GetSpanMut::span_mut(&mut **it),
@@ -2258,6 +2267,13 @@ impl GetSpanMut for JSDocNonNullableType<'_> {
 }
 
 impl GetSpanMut for JSDocUnknownType {
+    #[inline]
+    fn span_mut(&mut self) -> &mut Span {
+        &mut self.span
+    }
+}
+
+impl GetSpanMut for MissingExpression {
     #[inline]
     fn span_mut(&mut self) -> &mut Span {
         &mut self.span

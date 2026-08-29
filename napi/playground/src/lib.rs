@@ -19,7 +19,7 @@ use oxc::{
     isolated_declarations::{IsolatedDeclarations, IsolatedDeclarationsOptions},
     mangler::{MangleOptions, MangleOptionsKeepNames},
     minifier::{CompressOptions, Minifier, MinifierOptions, MinifierReturn},
-    parser::{ParseOptions, Parser, ParserReturn},
+    parser::{ParseMode, ParseOptions, Parser, ParserReturn},
     semantic::{
         ReferenceId, ScopeFlags, ScopeId, Scoping, SemanticBuilder, SymbolFlags, SymbolId,
         dot::{DebugDot, DebugDotContext},
@@ -55,6 +55,7 @@ pub struct Oxc {
     pub ast: (),
     pub ast_json: String,
     pub ir: String,
+    pub has_recovery: bool,
     pub control_flow_graph: String,
     pub symbols_json: String,
     pub scope_text: String,
@@ -129,6 +130,7 @@ impl Oxc {
         // Phase 1: Parse source
         let (mut program, mut module_record) =
             self.parse_source(&allocator, &source_text, source_type, parser_options);
+        self.has_recovery = Self::has_missing_expression(&program);
 
         // Phase 2: Build semantic analysis
         let semantic =
@@ -205,7 +207,13 @@ impl Oxc {
         self.codegen(&path, &program, minifier_return, run_options, &codegen_options);
 
         // Phase 9: Finalize output
-        self.finalize_output(&source_text, &mut program, &mut module_record, source_type);
+        self.finalize_output(
+            &source_text,
+            &mut program,
+            &mut module_record,
+            source_type,
+            self.has_recovery,
+        );
 
         Ok(())
     }
@@ -219,6 +227,11 @@ impl Oxc {
     ) -> (Program<'a>, oxc::syntax::module_record::ModuleRecord<'a>) {
         let parser_options = ParseOptions {
             parse_regular_expression: true,
+            mode: if parser_options.editor_recovery {
+                ParseMode::Editor
+            } else {
+                ParseMode::Normal
+            },
             allow_return_outside_function: parser_options.allow_return_outside_function,
             preserve_parens: parser_options.preserve_parens,
             allow_v8_intrinsics: parser_options.allow_v8_intrinsics,
@@ -228,6 +241,23 @@ impl Oxc {
             Parser::new(allocator, source_text, source_type).with_options(parser_options).parse();
         self.diagnostics.extend(diagnostics);
         (program, module_record)
+    }
+
+    fn has_missing_expression(program: &Program<'_>) -> bool {
+        #[derive(Default)]
+        struct Detector {
+            found: bool,
+        }
+
+        impl<'a> Visit<'a> for Detector {
+            fn enter_node(&mut self, kind: oxc::ast::AstKind<'a>) {
+                self.found |= matches!(kind, oxc::ast::AstKind::MissingExpression(_));
+            }
+        }
+
+        let mut detector = Detector::default();
+        detector.visit_program(program);
+        detector.found
     }
 
     fn build_semantic<'a>(
@@ -360,6 +390,7 @@ impl Oxc {
         program: &mut Program<'a>,
         module_record: &mut oxc::syntax::module_record::ModuleRecord<'a>,
         source_type: SourceType,
+        has_recovery: bool,
     ) {
         self.ir = format!("{:#?}", program.body);
         let mut comments = convert_utf8_to_utf16(source_text, program, module_record, &mut []);
@@ -380,7 +411,13 @@ impl Oxc {
         }
 
         let include_ts_fields = !source_type.is_javascript();
-        self.ast_json = program.to_pretty_estree_json_with_fixes(include_ts_fields, false);
+        self.ast_json = if has_recovery {
+            // MissingExpression is an internal typed AST node, not an ESTree extension.
+            // Keep the JS proxy valid while the Rust AST remains available for inspection.
+            "{\"node\":\n{}\n,\"fixes\":[]}".to_string()
+        } else {
+            program.to_pretty_estree_json_with_fixes(include_ts_fields, false)
+        };
         self.comments = comments;
     }
 
