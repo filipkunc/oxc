@@ -3,7 +3,9 @@ use oxc_ast::ast::*;
 use oxc_span::{GetSpan, Span};
 
 use super::VariableDeclarationParent;
-use crate::{ParserConfig as Config, ParserImpl, StatementContext, diagnostics, lexer::Kind};
+use crate::{
+    ParseMode, ParserConfig as Config, ParserImpl, StatementContext, diagnostics, lexer::Kind,
+};
 
 impl<'a, C: Config> ParserImpl<'a, C> {
     pub(crate) fn parse_let(&mut self, stmt_ctx: StatementContext) -> Statement<'a> {
@@ -131,7 +133,17 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         };
         // `const foo /* #__PURE__ */ = bar()` - pure comment before `=` cannot be applied
         self.lexer.trivia_builder.mark_current_pure_comment_not_applied();
-        let init = self.eat(Kind::Eq).then(|| self.parse_assignment_expression_or_higher());
+        let init = if !self.eat(Kind::Eq) {
+            None
+        } else if self.options.mode == ParseMode::Editor
+            && matches!(self.cur_kind(), Kind::Comma | Kind::Semicolon | Kind::RCurly | Kind::Eof)
+        {
+            let span = Span::empty(self.cur_start());
+            self.error(diagnostics::expression_expected(span));
+            Some(Expression::MissingExpression(MissingExpression::boxed(span, self)))
+        } else {
+            Some(self.parse_assignment_expression_or_higher())
+        };
         let decl = VariableDeclarator::new(
             self.end_span(start),
             id,

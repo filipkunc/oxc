@@ -3538,6 +3538,22 @@ impl JSDocUnknownType {
     }
 }
 
+impl MissingExpression {
+    /// Get [`NodeId`] of [`MissingExpression`].
+    ///
+    /// Only use this method on a post-semantic AST where [`NodeId`]s are always defined.
+    #[inline]
+    pub fn node_id(&self) -> NodeId {
+        self.node_id.get()
+    }
+
+    /// Set [`NodeId`] of [`MissingExpression`].
+    #[inline]
+    pub fn set_node_id(&self, node_id: NodeId) {
+        self.node_id.set(node_id);
+    }
+}
+
 impl Expression<'_> {
     /// Get [`NodeId`] of [`Expression`].
     // `#[inline(always)]` because this should boil down to a single instruction.
@@ -3585,6 +3601,7 @@ impl Expression<'_> {
             Self::TSNonNullExpression(it) => it.node_id(),
             Self::TSInstantiationExpression(it) => it.node_id(),
             Self::V8IntrinsicExpression(it) => it.node_id(),
+            Self::MissingExpression(it) => it.node_id(),
             Self::ComputedMemberExpression(it) => it.node_id(),
             Self::StaticMemberExpression(it) => it.node_id(),
             Self::PrivateFieldExpression(it) => it.node_id(),
@@ -3641,6 +3658,7 @@ impl ArrayExpressionElement<'_> {
             Self::TSNonNullExpression(it) => it.node_id(),
             Self::TSInstantiationExpression(it) => it.node_id(),
             Self::V8IntrinsicExpression(it) => it.node_id(),
+            Self::MissingExpression(it) => it.node_id(),
             Self::ComputedMemberExpression(it) => it.node_id(),
             Self::StaticMemberExpression(it) => it.node_id(),
             Self::PrivateFieldExpression(it) => it.node_id(),
@@ -3709,6 +3727,7 @@ impl PropertyKey<'_> {
             Self::TSNonNullExpression(it) => it.node_id(),
             Self::TSInstantiationExpression(it) => it.node_id(),
             Self::V8IntrinsicExpression(it) => it.node_id(),
+            Self::MissingExpression(it) => it.node_id(),
             Self::ComputedMemberExpression(it) => it.node_id(),
             Self::StaticMemberExpression(it) => it.node_id(),
             Self::PrivateFieldExpression(it) => it.node_id(),
@@ -3777,6 +3796,7 @@ impl Argument<'_> {
             Self::TSNonNullExpression(it) => it.node_id(),
             Self::TSInstantiationExpression(it) => it.node_id(),
             Self::V8IntrinsicExpression(it) => it.node_id(),
+            Self::MissingExpression(it) => it.node_id(),
             Self::ComputedMemberExpression(it) => it.node_id(),
             Self::StaticMemberExpression(it) => it.node_id(),
             Self::PrivateFieldExpression(it) => it.node_id(),
@@ -3996,6 +4016,7 @@ impl ForStatementInit<'_> {
             Self::TSNonNullExpression(it) => it.node_id(),
             Self::TSInstantiationExpression(it) => it.node_id(),
             Self::V8IntrinsicExpression(it) => it.node_id(),
+            Self::MissingExpression(it) => it.node_id(),
             Self::ComputedMemberExpression(it) => it.node_id(),
             Self::StaticMemberExpression(it) => it.node_id(),
             Self::PrivateFieldExpression(it) => it.node_id(),
@@ -4086,6 +4107,7 @@ impl ArrowFunctionBody<'_> {
             Self::TSNonNullExpression(it) => it.node_id(),
             Self::TSInstantiationExpression(it) => it.node_id(),
             Self::V8IntrinsicExpression(it) => it.node_id(),
+            Self::MissingExpression(it) => it.node_id(),
             Self::ComputedMemberExpression(it) => it.node_id(),
             Self::StaticMemberExpression(it) => it.node_id(),
             Self::PrivateFieldExpression(it) => it.node_id(),
@@ -4201,6 +4223,7 @@ impl ExportDefaultDeclarationKind<'_> {
             Self::TSNonNullExpression(it) => it.node_id(),
             Self::TSInstantiationExpression(it) => it.node_id(),
             Self::V8IntrinsicExpression(it) => it.node_id(),
+            Self::MissingExpression(it) => it.node_id(),
             Self::ComputedMemberExpression(it) => it.node_id(),
             Self::StaticMemberExpression(it) => it.node_id(),
             Self::PrivateFieldExpression(it) => it.node_id(),
@@ -4297,6 +4320,7 @@ impl JSXExpression<'_> {
             Self::TSNonNullExpression(it) => it.node_id(),
             Self::TSInstantiationExpression(it) => it.node_id(),
             Self::V8IntrinsicExpression(it) => it.node_id(),
+            Self::MissingExpression(it) => it.node_id(),
             Self::ComputedMemberExpression(it) => it.node_id(),
             Self::StaticMemberExpression(it) => it.node_id(),
             Self::PrivateFieldExpression(it) => it.node_id(),

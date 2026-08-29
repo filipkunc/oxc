@@ -11,6 +11,7 @@ use crate::ast::comment::*;
 use crate::ast::js::*;
 use crate::ast::jsx::*;
 use crate::ast::literal::*;
+use crate::ast::recovery::*;
 use crate::ast::ts::*;
 
 impl<'new_alloc> CloneIn<'new_alloc> for Program<'_> {
@@ -200,6 +201,11 @@ impl<'new_alloc> CloneIn<'new_alloc> for Expression<'_> {
             Self::V8IntrinsicExpression(it) => Expression::V8IntrinsicExpression(
                 CloneIn::clone_in_impl(it, with_semantic_ids, allocator),
             ),
+            Self::MissingExpression(it) => Expression::MissingExpression(CloneIn::clone_in_impl(
+                it,
+                with_semantic_ids,
+                allocator,
+            )),
             Self::ComputedMemberExpression(_)
             | Self::StaticMemberExpression(_)
             | Self::PrivateFieldExpression(_) => Expression::from(CloneIn::clone_in_impl(
@@ -372,6 +378,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ArrayExpressionElement<'_> {
             | Self::TSNonNullExpression(_)
             | Self::TSInstantiationExpression(_)
             | Self::V8IntrinsicExpression(_)
+            | Self::MissingExpression(_)
             | Self::ComputedMemberExpression(_)
             | Self::StaticMemberExpression(_)
             | Self::PrivateFieldExpression(_) => ArrayExpressionElement::from(
@@ -516,6 +523,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for PropertyKey<'_> {
             | Self::TSNonNullExpression(_)
             | Self::TSInstantiationExpression(_)
             | Self::V8IntrinsicExpression(_)
+            | Self::MissingExpression(_)
             | Self::ComputedMemberExpression(_)
             | Self::StaticMemberExpression(_)
             | Self::PrivateFieldExpression(_) => PropertyKey::from(CloneIn::clone_in_impl(
@@ -838,6 +846,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for Argument<'_> {
             | Self::TSNonNullExpression(_)
             | Self::TSInstantiationExpression(_)
             | Self::V8IntrinsicExpression(_)
+            | Self::MissingExpression(_)
             | Self::ComputedMemberExpression(_)
             | Self::StaticMemberExpression(_)
             | Self::PrivateFieldExpression(_) => Argument::from(CloneIn::clone_in_impl(
@@ -1741,6 +1750,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ForStatementInit<'_> {
             | Self::TSNonNullExpression(_)
             | Self::TSInstantiationExpression(_)
             | Self::V8IntrinsicExpression(_)
+            | Self::MissingExpression(_)
             | Self::ComputedMemberExpression(_)
             | Self::StaticMemberExpression(_)
             | Self::PrivateFieldExpression(_) => ForStatementInit::from(CloneIn::clone_in_impl(
@@ -2361,6 +2371,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ArrowFunctionBody<'_> {
             | Self::TSNonNullExpression(_)
             | Self::TSInstantiationExpression(_)
             | Self::V8IntrinsicExpression(_)
+            | Self::MissingExpression(_)
             | Self::ComputedMemberExpression(_)
             | Self::StaticMemberExpression(_)
             | Self::PrivateFieldExpression(_) => ArrowFunctionBody::from(CloneIn::clone_in_impl(
@@ -3125,6 +3136,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for ExportDefaultDeclarationKind<'_> {
             | Self::TSNonNullExpression(_)
             | Self::TSInstantiationExpression(_)
             | Self::V8IntrinsicExpression(_)
+            | Self::MissingExpression(_)
             | Self::ComputedMemberExpression(_)
             | Self::StaticMemberExpression(_)
             | Self::PrivateFieldExpression(_) => ExportDefaultDeclarationKind::from(
@@ -3594,6 +3606,7 @@ impl<'new_alloc> CloneIn<'new_alloc> for JSXExpression<'_> {
             | Self::TSNonNullExpression(_)
             | Self::TSInstantiationExpression(_)
             | Self::V8IntrinsicExpression(_)
+            | Self::MissingExpression(_)
             | Self::ComputedMemberExpression(_)
             | Self::StaticMemberExpression(_)
             | Self::PrivateFieldExpression(_) => JSXExpression::from(CloneIn::clone_in_impl(
@@ -5799,6 +5812,21 @@ impl<'new_alloc> CloneIn<'new_alloc> for Comment {
             position: CloneIn::clone_in_impl(&self.position, with_semantic_ids, allocator),
             newlines: CloneIn::clone_in_impl(&self.newlines, with_semantic_ids, allocator),
             content: CloneIn::clone_in_impl(&self.content, with_semantic_ids, allocator),
+        }
+    }
+}
+
+impl<'new_alloc> CloneIn<'new_alloc> for MissingExpression {
+    type Cloned = MissingExpression;
+
+    fn clone_in_impl(
+        &self,
+        with_semantic_ids: CloneInSemanticIds,
+        allocator: &'new_alloc Allocator,
+    ) -> Self::Cloned {
+        MissingExpression {
+            node_id: CloneIn::clone_in_impl(&self.node_id, with_semantic_ids, allocator),
+            span: CloneIn::clone_in_impl(&self.span, with_semantic_ids, allocator),
         }
     }
 }

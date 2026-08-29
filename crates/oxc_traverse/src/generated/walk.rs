@@ -195,6 +195,9 @@ unsafe fn walk_expression<'a, State, Tr: Traverse<'a, State>>(
         Expression::V8IntrinsicExpression(node) => {
             walk_v8_intrinsic_expression(traverser, (&mut **node) as *mut _, ctx)
         }
+        Expression::MissingExpression(node) => {
+            walk_missing_expression(traverser, (&mut **node) as *mut _, ctx)
+        }
         Expression::ComputedMemberExpression(_)
         | Expression::StaticMemberExpression(_)
         | Expression::PrivateFieldExpression(_) => {
@@ -321,6 +324,7 @@ unsafe fn walk_array_expression_element<'a, State, Tr: Traverse<'a, State>>(
         | ArrayExpressionElement::TSNonNullExpression(_)
         | ArrayExpressionElement::TSInstantiationExpression(_)
         | ArrayExpressionElement::V8IntrinsicExpression(_)
+        | ArrayExpressionElement::MissingExpression(_)
         | ArrayExpressionElement::ComputedMemberExpression(_)
         | ArrayExpressionElement::StaticMemberExpression(_)
         | ArrayExpressionElement::PrivateFieldExpression(_) => {
@@ -452,6 +456,7 @@ unsafe fn walk_property_key<'a, State, Tr: Traverse<'a, State>>(
         | PropertyKey::TSNonNullExpression(_)
         | PropertyKey::TSInstantiationExpression(_)
         | PropertyKey::V8IntrinsicExpression(_)
+        | PropertyKey::MissingExpression(_)
         | PropertyKey::ComputedMemberExpression(_)
         | PropertyKey::StaticMemberExpression(_)
         | PropertyKey::PrivateFieldExpression(_) => walk_expression(traverser, node as *mut _, ctx),
@@ -769,6 +774,7 @@ unsafe fn walk_argument<'a, State, Tr: Traverse<'a, State>>(
         | Argument::TSNonNullExpression(_)
         | Argument::TSInstantiationExpression(_)
         | Argument::V8IntrinsicExpression(_)
+        | Argument::MissingExpression(_)
         | Argument::ComputedMemberExpression(_)
         | Argument::StaticMemberExpression(_)
         | Argument::PrivateFieldExpression(_) => walk_expression(traverser, node as *mut _, ctx),
@@ -1736,6 +1742,7 @@ unsafe fn walk_for_statement_init<'a, State, Tr: Traverse<'a, State>>(
         | ForStatementInit::TSNonNullExpression(_)
         | ForStatementInit::TSInstantiationExpression(_)
         | ForStatementInit::V8IntrinsicExpression(_)
+        | ForStatementInit::MissingExpression(_)
         | ForStatementInit::ComputedMemberExpression(_)
         | ForStatementInit::StaticMemberExpression(_)
         | ForStatementInit::PrivateFieldExpression(_) => {
@@ -2494,6 +2501,7 @@ unsafe fn walk_arrow_function_body<'a, State, Tr: Traverse<'a, State>>(
         | ArrowFunctionBody::TSNonNullExpression(_)
         | ArrowFunctionBody::TSInstantiationExpression(_)
         | ArrowFunctionBody::V8IntrinsicExpression(_)
+        | ArrowFunctionBody::MissingExpression(_)
         | ArrowFunctionBody::ComputedMemberExpression(_)
         | ArrowFunctionBody::StaticMemberExpression(_)
         | ArrowFunctionBody::PrivateFieldExpression(_) => {
@@ -3276,6 +3284,7 @@ unsafe fn walk_export_default_declaration_kind<'a, State, Tr: Traverse<'a, State
         | ExportDefaultDeclarationKind::TSNonNullExpression(_)
         | ExportDefaultDeclarationKind::TSInstantiationExpression(_)
         | ExportDefaultDeclarationKind::V8IntrinsicExpression(_)
+        | ExportDefaultDeclarationKind::MissingExpression(_)
         | ExportDefaultDeclarationKind::ComputedMemberExpression(_)
         | ExportDefaultDeclarationKind::StaticMemberExpression(_)
         | ExportDefaultDeclarationKind::PrivateFieldExpression(_) => {
@@ -3679,6 +3688,7 @@ unsafe fn walk_jsx_expression<'a, State, Tr: Traverse<'a, State>>(
         | JSXExpression::TSNonNullExpression(_)
         | JSXExpression::TSInstantiationExpression(_)
         | JSXExpression::V8IntrinsicExpression(_)
+        | JSXExpression::MissingExpression(_)
         | JSXExpression::ComputedMemberExpression(_)
         | JSXExpression::StaticMemberExpression(_)
         | JSXExpression::PrivateFieldExpression(_) => {
@@ -5874,6 +5884,15 @@ unsafe fn walk_js_doc_unknown_type<'a, State, Tr: Traverse<'a, State>>(
 ) {
     traverser.enter_js_doc_unknown_type(&mut *node, ctx);
     traverser.exit_js_doc_unknown_type(&mut *node, ctx);
+}
+
+unsafe fn walk_missing_expression<'a, State, Tr: Traverse<'a, State>>(
+    traverser: &mut Tr,
+    node: *mut MissingExpression,
+    ctx: &mut TraverseCtx<'a, State>,
+) {
+    traverser.enter_missing_expression(&mut *node, ctx);
+    traverser.exit_missing_expression(&mut *node, ctx);
 }
 
 unsafe fn walk_statements<'a, State, Tr: Traverse<'a, State>>(

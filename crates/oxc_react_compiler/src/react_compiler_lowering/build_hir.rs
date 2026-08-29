@@ -5513,6 +5513,7 @@ fn expression_type_name(expr: &oxc::Expression) -> &'static str {
         oxc::Expression::TSTypeAssertion(_) => "TSTypeAssertion",
         oxc::Expression::TSInstantiationExpression(_) => "TSInstantiationExpression",
         oxc::Expression::V8IntrinsicExpression(_) => "V8IntrinsicExpression",
+        oxc::Expression::MissingExpression(_) => "MissingExpression",
     }
 }
 

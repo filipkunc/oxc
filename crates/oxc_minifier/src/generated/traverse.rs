@@ -2537,6 +2537,17 @@ pub trait Traverse<'a> {
     }
 
     #[inline]
+    fn enter_missing_expression(
+        &mut self,
+        node: &mut MissingExpression,
+        ctx: &mut TraverseCtx<'a>,
+    ) {
+    }
+    #[inline]
+    fn exit_missing_expression(&mut self, node: &mut MissingExpression, ctx: &mut TraverseCtx<'a>) {
+    }
+
+    #[inline]
     fn enter_statements(
         &mut self,
         node: &mut ArenaVec<'a, Statement<'a>>,

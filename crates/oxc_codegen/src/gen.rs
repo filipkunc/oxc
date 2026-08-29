@@ -1374,6 +1374,8 @@ impl GenExpr for Expression<'_> {
             Self::TSInstantiationExpression(e) => e.print_expr(p, precedence, ctx),
             // V8 intrinsics (rare)
             Self::V8IntrinsicExpression(e) => e.print_expr(p, precedence, ctx),
+            // Editor recovery placeholders do not correspond to source text.
+            Self::MissingExpression(_) => {}
         }
     }
 }

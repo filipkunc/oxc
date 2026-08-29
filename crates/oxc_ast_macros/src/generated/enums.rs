@@ -425,6 +425,13 @@ pub static INHERITED_ENUMS: [InheritedEnum; 9] = [
                 discriminant: 40,
             },
             EnumVariant {
+                name: "MissingExpression",
+                inner_name: "MissingExpression",
+                inner_has_lifetime: false,
+                is_boxed: true,
+                discriminant: 41,
+            },
+            EnumVariant {
                 name: "ComputedMemberExpression",
                 inner_name: "ComputedMemberExpression",
                 inner_has_lifetime: true,

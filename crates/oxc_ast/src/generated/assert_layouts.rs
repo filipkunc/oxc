@@ -1847,6 +1847,12 @@ const _: () = {
     assert!(offset_of!(Comment, position) == 13);
     assert!(offset_of!(Comment, newlines) == 14);
     assert!(offset_of!(Comment, content) == 15);
+
+    // Padding: 4 bytes
+    assert!(size_of::<MissingExpression>() == 16);
+    assert!(align_of::<MissingExpression>() == 8);
+    assert!(offset_of!(MissingExpression, span) == 0);
+    assert!(offset_of!(MissingExpression, node_id) == 8);
 };
 
 #[cfg(target_pointer_width = "32")]
@@ -3689,6 +3695,12 @@ const _: () = if cfg!(target_family = "wasm") || align_of::<u64>() == 8 {
     assert!(offset_of!(Comment, position) == 13);
     assert!(offset_of!(Comment, newlines) == 14);
     assert!(offset_of!(Comment, content) == 15);
+
+    // Padding: 0 bytes
+    assert!(size_of::<MissingExpression>() == 12);
+    assert!(align_of::<MissingExpression>() == 4);
+    assert!(offset_of!(MissingExpression, span) == 0);
+    assert!(offset_of!(MissingExpression, node_id) == 8);
 };
 
 #[cfg(not(any(target_pointer_width = "64", target_pointer_width = "32")))]

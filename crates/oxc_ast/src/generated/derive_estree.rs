@@ -63,6 +63,7 @@ impl ESTree for Expression<'_> {
             Self::TSNonNullExpression(it) => it.serialize(serializer),
             Self::TSInstantiationExpression(it) => it.serialize(serializer),
             Self::V8IntrinsicExpression(it) => it.serialize(serializer),
+            Self::MissingExpression(_) => unreachable!("This enum variant is skipped."),
             Self::ComputedMemberExpression(_)
             | Self::StaticMemberExpression(_)
             | Self::PrivateFieldExpression(_) => self.to_member_expression().serialize(serializer),
@@ -190,6 +191,7 @@ impl ESTree for ArrayExpressionElement<'_> {
             | Self::TSNonNullExpression(_)
             | Self::TSInstantiationExpression(_)
             | Self::V8IntrinsicExpression(_)
+            | Self::MissingExpression(_)
             | Self::ComputedMemberExpression(_)
             | Self::StaticMemberExpression(_)
             | Self::PrivateFieldExpression(_) => self.to_expression().serialize(serializer),
@@ -284,6 +286,7 @@ impl ESTree for PropertyKey<'_> {
             | Self::TSNonNullExpression(_)
             | Self::TSInstantiationExpression(_)
             | Self::V8IntrinsicExpression(_)
+            | Self::MissingExpression(_)
             | Self::ComputedMemberExpression(_)
             | Self::StaticMemberExpression(_)
             | Self::PrivateFieldExpression(_) => self.to_expression().serialize(serializer),
@@ -490,6 +493,7 @@ impl ESTree for Argument<'_> {
             | Self::TSNonNullExpression(_)
             | Self::TSInstantiationExpression(_)
             | Self::V8IntrinsicExpression(_)
+            | Self::MissingExpression(_)
             | Self::ComputedMemberExpression(_)
             | Self::StaticMemberExpression(_)
             | Self::PrivateFieldExpression(_) => self.to_expression().serialize(serializer),
@@ -1042,6 +1046,7 @@ impl ESTree for ForStatementInit<'_> {
             | Self::TSNonNullExpression(_)
             | Self::TSInstantiationExpression(_)
             | Self::V8IntrinsicExpression(_)
+            | Self::MissingExpression(_)
             | Self::ComputedMemberExpression(_)
             | Self::StaticMemberExpression(_)
             | Self::PrivateFieldExpression(_) => self.to_expression().serialize(serializer),
@@ -1419,6 +1424,7 @@ impl ESTree for ArrowFunctionBody<'_> {
             | Self::TSNonNullExpression(_)
             | Self::TSInstantiationExpression(_)
             | Self::V8IntrinsicExpression(_)
+            | Self::MissingExpression(_)
             | Self::ComputedMemberExpression(_)
             | Self::StaticMemberExpression(_)
             | Self::PrivateFieldExpression(_) => self.to_expression().serialize(serializer),
@@ -1902,6 +1908,7 @@ impl ESTree for ExportDefaultDeclarationKind<'_> {
             | Self::TSNonNullExpression(_)
             | Self::TSInstantiationExpression(_)
             | Self::V8IntrinsicExpression(_)
+            | Self::MissingExpression(_)
             | Self::ComputedMemberExpression(_)
             | Self::StaticMemberExpression(_)
             | Self::PrivateFieldExpression(_) => self.to_expression().serialize(serializer),
@@ -2201,6 +2208,7 @@ impl ESTree for JSXExpression<'_> {
             | Self::TSNonNullExpression(_)
             | Self::TSInstantiationExpression(_)
             | Self::V8IntrinsicExpression(_)
+            | Self::MissingExpression(_)
             | Self::ComputedMemberExpression(_)
             | Self::StaticMemberExpression(_)
             | Self::PrivateFieldExpression(_) => self.to_expression().serialize(serializer),

@@ -143,6 +143,7 @@ impl NoUnusedExpressions {
             | Expression::Super(_)
             | Expression::CallExpression(_)
             | Expression::V8IntrinsicExpression(_)
+            | Expression::MissingExpression(_)
             | Expression::UpdateExpression(_)
             | Expression::TSSatisfiesExpression(_)
             | Expression::YieldExpression(_) => false,

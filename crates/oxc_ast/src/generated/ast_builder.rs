@@ -1229,6 +1229,17 @@ impl<'a> Expression<'a> {
         ))
     }
 
+    /// Build an [`Expression::MissingExpression`].
+    ///
+    /// This node contains a [`MissingExpression`] that will be stored in the memory arena.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    #[inline]
+    pub fn new_missing_expression(span: Span, builder: &impl GetAstBuilder<'a>) -> Self {
+        Self::MissingExpression(MissingExpression::boxed(span, builder.builder()))
+    }
+
     /// Build an [`Expression::ComputedMemberExpression`].
     ///
     /// This node contains a [`ComputedMemberExpression`] that will be stored in the memory arena.
@@ -2757,6 +2768,17 @@ impl<'a> ArrayExpressionElement<'a> {
         ))
     }
 
+    /// Build an [`ArrayExpressionElement::MissingExpression`].
+    ///
+    /// This node contains a [`MissingExpression`] that will be stored in the memory arena.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    #[inline]
+    pub fn new_missing_expression(span: Span, builder: &impl GetAstBuilder<'a>) -> Self {
+        Self::MissingExpression(MissingExpression::boxed(span, builder.builder()))
+    }
+
     /// Build an [`ArrayExpressionElement::ComputedMemberExpression`].
     ///
     /// This node contains a [`ComputedMemberExpression`] that will be stored in the memory arena.
@@ -4190,6 +4212,17 @@ impl<'a> PropertyKey<'a> {
             arguments,
             builder.builder(),
         ))
+    }
+
+    /// Build a [`PropertyKey::MissingExpression`].
+    ///
+    /// This node contains a [`MissingExpression`] that will be stored in the memory arena.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    #[inline]
+    pub fn new_missing_expression(span: Span, builder: &impl GetAstBuilder<'a>) -> Self {
+        Self::MissingExpression(MissingExpression::boxed(span, builder.builder()))
     }
 
     /// Build a [`PropertyKey::ComputedMemberExpression`].
@@ -6132,6 +6165,17 @@ impl<'a> Argument<'a> {
             arguments,
             builder.builder(),
         ))
+    }
+
+    /// Build an [`Argument::MissingExpression`].
+    ///
+    /// This node contains a [`MissingExpression`] that will be stored in the memory arena.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    #[inline]
+    pub fn new_missing_expression(span: Span, builder: &impl GetAstBuilder<'a>) -> Self {
+        Self::MissingExpression(MissingExpression::boxed(span, builder.builder()))
     }
 
     /// Build an [`Argument::ComputedMemberExpression`].
@@ -11470,6 +11514,17 @@ impl<'a> ForStatementInit<'a> {
         ))
     }
 
+    /// Build a [`ForStatementInit::MissingExpression`].
+    ///
+    /// This node contains a [`MissingExpression`] that will be stored in the memory arena.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    #[inline]
+    pub fn new_missing_expression(span: Span, builder: &impl GetAstBuilder<'a>) -> Self {
+        Self::MissingExpression(MissingExpression::boxed(span, builder.builder()))
+    }
+
     /// Build a [`ForStatementInit::ComputedMemberExpression`].
     ///
     /// This node contains a [`ComputedMemberExpression`] that will be stored in the memory arena.
@@ -14530,6 +14585,17 @@ impl<'a> ArrowFunctionBody<'a> {
             arguments,
             builder.builder(),
         ))
+    }
+
+    /// Build an [`ArrowFunctionBody::MissingExpression`].
+    ///
+    /// This node contains a [`MissingExpression`] that will be stored in the memory arena.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    #[inline]
+    pub fn new_missing_expression(span: Span, builder: &impl GetAstBuilder<'a>) -> Self {
+        Self::MissingExpression(MissingExpression::boxed(span, builder.builder()))
     }
 
     /// Build an [`ArrowFunctionBody::ComputedMemberExpression`].
@@ -18001,6 +18067,17 @@ impl<'a> ExportDefaultDeclarationKind<'a> {
         ))
     }
 
+    /// Build an [`ExportDefaultDeclarationKind::MissingExpression`].
+    ///
+    /// This node contains a [`MissingExpression`] that will be stored in the memory arena.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    #[inline]
+    pub fn new_missing_expression(span: Span, builder: &impl GetAstBuilder<'a>) -> Self {
+        Self::MissingExpression(MissingExpression::boxed(span, builder.builder()))
+    }
+
     /// Build an [`ExportDefaultDeclarationKind::ComputedMemberExpression`].
     ///
     /// This node contains a [`ComputedMemberExpression`] that will be stored in the memory arena.
@@ -20190,6 +20267,17 @@ impl<'a> JSXExpression<'a> {
             arguments,
             builder.builder(),
         ))
+    }
+
+    /// Build a [`JSXExpression::MissingExpression`].
+    ///
+    /// This node contains a [`MissingExpression`] that will be stored in the memory arena.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    #[inline]
+    pub fn new_missing_expression(span: Span, builder: &impl GetAstBuilder<'a>) -> Self {
+        Self::MissingExpression(MissingExpression::boxed(span, builder.builder()))
     }
 
     /// Build a [`JSXExpression::ComputedMemberExpression`].
@@ -27305,6 +27393,34 @@ impl JSDocUnknownType {
     ///
     /// Returns a [`Box`](ArenaBox) containing the newly-allocated node.
     /// If you want a stack-allocated node, use [`JSDocUnknownType::new`] instead.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    #[inline]
+    pub fn boxed<'a>(span: Span, builder: &impl GetAstBuilder<'a>) -> ArenaBox<'a, Self> {
+        let builder = builder.builder();
+        ArenaBox::new_in(Self::new(span, builder), &builder.allocator())
+    }
+}
+
+impl MissingExpression {
+    /// Build a [`MissingExpression`].
+    ///
+    /// If you want the built node to be allocated in the memory arena,
+    /// use [`MissingExpression::boxed`] instead.
+    ///
+    /// ## Parameters
+    /// * `span`: The [`Span`] covering this node
+    #[inline]
+    pub fn new<'a>(span: Span, builder: &impl GetAstBuilder<'a>) -> Self {
+        let builder = builder.builder();
+        MissingExpression { node_id: Cell::new(builder.node_id()), span }
+    }
+
+    /// Build a [`MissingExpression`], and store it in the memory arena.
+    ///
+    /// Returns a [`Box`](ArenaBox) containing the newly-allocated node.
+    /// If you want a stack-allocated node, use [`MissingExpression::new`] instead.
     ///
     /// ## Parameters
     /// * `span`: The [`Span`] covering this node
