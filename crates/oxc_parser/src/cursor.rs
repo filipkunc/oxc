@@ -724,6 +724,54 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         false
     }
 
+    /// Whether the current token starts a trustworthy element owned by `context` while an inner
+    /// parser is recovering. Keep these predicates deliberately narrower than ordinary grammar
+    /// lookahead: a false positive would strand the inner parser at a token the owner cannot use.
+    fn is_recovery_element_start(&self, context: RecoveryContext) -> bool {
+        if context.intersects(RecoveryContext::SourceElements | RecoveryContext::BlockStatements) {
+            return matches!(self.cur_kind(), Kind::Const | Kind::Var);
+        }
+        false
+    }
+
+    /// Whether the current token terminates or separates elements in `context` without belonging
+    /// to the missing inner expression.
+    fn is_recovery_terminator(&self, context: RecoveryContext) -> bool {
+        match self.cur_kind() {
+            Kind::Eof | Kind::Undetermined => true,
+            Kind::RCurly => {
+                context == RecoveryContext::BlockStatements
+                    || context == RecoveryContext::VariableDeclarations
+            }
+            Kind::Comma | Kind::Semicolon => context == RecoveryContext::VariableDeclarations,
+            _ => false,
+        }
+    }
+
+    /// Ask all active contexts whether one of them owns the current token. The caller must leave
+    /// an owned boundary unconsumed so the enclosing parser can resume from it.
+    pub(crate) fn at_recovery_context_boundary(&self) -> bool {
+        [
+            RecoveryContext::SourceElements,
+            RecoveryContext::BlockStatements,
+            RecoveryContext::VariableDeclarations,
+        ]
+        .into_iter()
+        .any(|context| {
+            self.recovery_ctx.contains(context)
+                && (self.is_recovery_element_start(context) || self.is_recovery_terminator(context))
+        })
+    }
+
+    /// Whether an active statement list owns the current token as its next element.
+    pub(crate) fn at_recovery_statement_element_start(&self) -> bool {
+        [RecoveryContext::SourceElements, RecoveryContext::BlockStatements].into_iter().any(
+            |context| {
+                self.recovery_ctx.contains(context) && self.is_recovery_element_start(context)
+            },
+        )
+    }
+
     fn at_recovery_type_argument_closing_boundary(&self) -> bool {
         matches!(
             self.cur_kind(),

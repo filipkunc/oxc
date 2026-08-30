@@ -5,7 +5,8 @@ use oxc_span::{GetSpan, Span};
 
 use super::VariableDeclarationParent;
 use crate::{
-    ParseMode, ParserConfig as Config, ParserImpl, StatementContext, diagnostics, lexer::Kind,
+    ParseMode, ParserConfig as Config, ParserImpl, RecoveryContext, StatementContext, diagnostics,
+    lexer::Kind,
 };
 
 impl<'a, C: Config> ParserImpl<'a, C> {
@@ -109,16 +110,25 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             );
         }
 
-        loop {
-            let declaration = self.parse_variable_declarator(decl_parent, kind);
-            declarations.push(declaration);
-            if !self.eat(Kind::Comma) {
-                break;
+        self.recovery_context_add(RecoveryContext::VariableDeclarations, |parser| {
+            loop {
+                let declaration = parser.parse_variable_declarator(decl_parent, kind);
+                declarations.push(declaration);
+                if !parser.eat(Kind::Comma) {
+                    break;
+                }
             }
-        }
+        });
 
         if matches!(decl_parent, VariableDeclarationParent::Statement) {
-            self.asi();
+            let recovered_before_statement = self.options.mode == ParseMode::Editor
+                && declarations.last().is_some_and(|declaration| {
+                    matches!(declaration.init, Some(Expression::MissingExpression(_)))
+                })
+                && self.at_recovery_statement_element_start();
+            if !recovered_before_statement {
+                self.asi();
+            }
         }
         VariableDeclaration::boxed(self.end_span(start), kind, declarations, declare, self)
     }
@@ -157,7 +167,9 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         let init = if !self.eat(Kind::Eq) {
             None
         } else if unlikely(self.options.mode == ParseMode::Editor)
-            && matches!(self.cur_kind(), Kind::Comma | Kind::Semicolon | Kind::RCurly | Kind::Eof)
+            && self.at_recovery_context_boundary()
+            && (decl_parent == VariableDeclarationParent::Statement
+                || !self.at_recovery_statement_element_start())
         {
             let span = Span::empty(self.cur_start());
             self.error(diagnostics::expression_expected(span));

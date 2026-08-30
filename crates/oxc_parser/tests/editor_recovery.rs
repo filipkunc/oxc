@@ -143,12 +143,18 @@ fn assert_editor_missing_expression(source_text: &str, offset: u32) {
 
 #[test]
 fn normal_mode_remains_fatal_for_a_missing_variable_initializer() {
-    let allocator = Allocator::default();
-    let parsed = Parser::new(&allocator, "let value =", SourceType::ts()).parse();
+    for source_text in [
+        "let value =",
+        "const broken =\nconst intact: number = 1;",
+        "const broken = const intact: number = 1;",
+    ] {
+        let allocator = Allocator::default();
+        let parsed = Parser::new(&allocator, source_text, SourceType::ts()).parse();
 
-    assert!(parsed.panicked);
-    assert!(parsed.program.body.is_empty());
-    assert!(!parsed.diagnostics.is_empty());
+        assert!(parsed.panicked);
+        assert!(parsed.program.body.is_empty());
+        assert!(!parsed.diagnostics.is_empty());
+    }
 }
 
 #[test]
@@ -196,6 +202,59 @@ fn editor_mode_preserves_the_boundary_and_following_declarations() {
         panic!("expected a variable declaration");
     };
     assert!(matches!(second.declarations[0].init, Some(Expression::NumericLiteral(_))));
+}
+
+#[test]
+fn editor_mode_resumes_at_a_following_variable_statement_without_a_semicolon() {
+    for source_text in
+        ["const broken =\nconst intact: number = 1;", "const broken = const intact: number = 1;"]
+    {
+        let allocator = Allocator::default();
+        let parsed = Parser::new(&allocator, source_text, SourceType::ts())
+            .with_options(ParseOptions { mode: ParseMode::Editor, ..ParseOptions::default() })
+            .parse();
+
+        assert!(!parsed.panicked, "editor recovery should preserve the program");
+        assert_eq!(parsed.program.body.len(), 2);
+        assert_eq!(parsed.diagnostics.len(), 1);
+        assert_eq!(parsed.diagnostics[0].message, "Expression expected.");
+
+        let oxc_ast::ast::Statement::VariableDeclaration(first) = &parsed.program.body[0] else {
+            panic!("expected the recovered variable declaration");
+        };
+        let Some(Expression::MissingExpression(missing)) = &first.declarations[0].init else {
+            panic!("expected a missing initializer");
+        };
+        assert_eq!(missing.span, Span::empty(15));
+
+        let oxc_ast::ast::Statement::VariableDeclaration(second) = &parsed.program.body[1] else {
+            panic!("expected the following variable declaration");
+        };
+        assert!(matches!(second.declarations[0].init, Some(Expression::NumericLiteral(_))));
+    }
+}
+
+#[test]
+fn editor_mode_resumes_at_a_var_statement_inside_a_block() {
+    let source_text = "function f() { const broken = var intact: number = 1; }";
+    let boundary = u32::try_from(source_text.find("var intact").expect("following declaration"))
+        .expect("source offset fits in u32");
+    let allocator = Allocator::default();
+    let parsed = Parser::new(&allocator, source_text, SourceType::ts())
+        .with_options(ParseOptions { mode: ParseMode::Editor, ..ParseOptions::default() })
+        .parse();
+
+    assert!(!parsed.panicked, "editor recovery should preserve the function");
+    assert_eq!(parsed.diagnostics.len(), 1);
+    let mut missing = MissingExpressions::default();
+    missing.visit_program(&parsed.program);
+    assert_eq!(missing.spans, [Span::empty(boundary)]);
+
+    let oxc_ast::ast::Statement::FunctionDeclaration(function) = &parsed.program.body[0] else {
+        panic!("expected a function declaration");
+    };
+    let body = function.body.as_ref().expect("function body");
+    assert_eq!(body.statements.len(), 2);
 }
 
 #[test]

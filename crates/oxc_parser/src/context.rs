@@ -32,6 +32,8 @@ bitflags! {
         const TypeMembers = 1 << 9;
         /// Members terminated by a class-body closing brace.
         const ClassMembers = 1 << 10;
+        /// Comma-delimited variable declarators inside one declaration statement.
+        const VariableDeclarations = 1 << 11;
     }
 }
 
