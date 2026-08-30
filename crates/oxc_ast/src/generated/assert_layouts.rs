@@ -1853,6 +1853,27 @@ const _: () = {
     assert!(align_of::<MissingExpression>() == 8);
     assert!(offset_of!(MissingExpression, span) == 0);
     assert!(offset_of!(MissingExpression, node_id) == 8);
+
+    // Padding: 4 bytes
+    assert!(size_of::<MalformedExpression>() == 16);
+    assert!(align_of::<MalformedExpression>() == 8);
+    assert!(offset_of!(MalformedExpression, span) == 0);
+    assert!(offset_of!(MalformedExpression, node_id) == 8);
+
+    // Padding: 3 bytes
+    assert!(size_of::<MissingMemberExpression>() == 40);
+    assert!(align_of::<MissingMemberExpression>() == 8);
+    assert!(offset_of!(MissingMemberExpression, span) == 0);
+    assert!(offset_of!(MissingMemberExpression, node_id) == 8);
+    assert!(offset_of!(MissingMemberExpression, optional) == 12);
+    assert!(offset_of!(MissingMemberExpression, object) == 16);
+    assert!(offset_of!(MissingMemberExpression, missing_property_span) == 32);
+
+    // Padding: 4 bytes
+    assert!(size_of::<MissingType>() == 16);
+    assert!(align_of::<MissingType>() == 8);
+    assert!(offset_of!(MissingType, span) == 0);
+    assert!(offset_of!(MissingType, node_id) == 8);
 };
 
 #[cfg(target_pointer_width = "32")]
@@ -3701,6 +3722,27 @@ const _: () = if cfg!(target_family = "wasm") || align_of::<u64>() == 8 {
     assert!(align_of::<MissingExpression>() == 4);
     assert!(offset_of!(MissingExpression, span) == 0);
     assert!(offset_of!(MissingExpression, node_id) == 8);
+
+    // Padding: 0 bytes
+    assert!(size_of::<MalformedExpression>() == 12);
+    assert!(align_of::<MalformedExpression>() == 4);
+    assert!(offset_of!(MalformedExpression, span) == 0);
+    assert!(offset_of!(MalformedExpression, node_id) == 8);
+
+    // Padding: 3 bytes
+    assert!(size_of::<MissingMemberExpression>() == 32);
+    assert!(align_of::<MissingMemberExpression>() == 4);
+    assert!(offset_of!(MissingMemberExpression, span) == 0);
+    assert!(offset_of!(MissingMemberExpression, node_id) == 8);
+    assert!(offset_of!(MissingMemberExpression, optional) == 12);
+    assert!(offset_of!(MissingMemberExpression, object) == 16);
+    assert!(offset_of!(MissingMemberExpression, missing_property_span) == 24);
+
+    // Padding: 0 bytes
+    assert!(size_of::<MissingType>() == 12);
+    assert!(align_of::<MissingType>() == 4);
+    assert!(offset_of!(MissingType, span) == 0);
+    assert!(offset_of!(MissingType, node_id) == 8);
 };
 
 #[cfg(not(any(target_pointer_width = "64", target_pointer_width = "32")))]

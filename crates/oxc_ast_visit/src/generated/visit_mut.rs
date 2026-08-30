@@ -1222,6 +1222,21 @@ pub trait VisitMut<'a>: Sized {
     }
 
     #[inline]
+    fn visit_malformed_expression(&mut self, it: &mut MalformedExpression) {
+        walk_malformed_expression(self, it);
+    }
+
+    #[inline]
+    fn visit_missing_member_expression(&mut self, it: &mut MissingMemberExpression<'a>) {
+        walk_missing_member_expression(self, it);
+    }
+
+    #[inline]
+    fn visit_missing_type(&mut self, it: &mut MissingType) {
+        walk_missing_type(self, it);
+    }
+
+    #[inline]
     fn visit_span(&mut self, it: &mut Span) {
         walk_span(self, it);
     }
@@ -1450,6 +1465,8 @@ pub mod walk_mut {
             }
             Expression::V8IntrinsicExpression(it) => visitor.visit_v8_intrinsic_expression(it),
             Expression::MissingExpression(it) => visitor.visit_missing_expression(it),
+            Expression::MalformedExpression(it) => visitor.visit_malformed_expression(it),
+            Expression::MissingMemberExpression(it) => visitor.visit_missing_member_expression(it),
             match_member_expression!(Expression) => {
                 visitor.visit_member_expression(it.to_member_expression_mut())
             }
@@ -3561,6 +3578,7 @@ pub mod walk_mut {
             TSType::JSDocNullableType(it) => visitor.visit_js_doc_nullable_type(it),
             TSType::JSDocNonNullableType(it) => visitor.visit_js_doc_non_nullable_type(it),
             TSType::JSDocUnknownType(it) => visitor.visit_js_doc_unknown_type(it),
+            TSType::MissingType(it) => visitor.visit_missing_type(it),
         }
     }
 
@@ -4562,6 +4580,38 @@ pub mod walk_mut {
         it: &mut MissingExpression,
     ) {
         let kind = AstType::MissingExpression;
+        visitor.enter_node(kind);
+        visitor.visit_span(&mut it.span);
+        visitor.leave_node(kind);
+    }
+
+    #[inline]
+    pub fn walk_malformed_expression<'a, V: VisitMut<'a>>(
+        visitor: &mut V,
+        it: &mut MalformedExpression,
+    ) {
+        let kind = AstType::MalformedExpression;
+        visitor.enter_node(kind);
+        visitor.visit_span(&mut it.span);
+        visitor.leave_node(kind);
+    }
+
+    #[inline]
+    pub fn walk_missing_member_expression<'a, V: VisitMut<'a>>(
+        visitor: &mut V,
+        it: &mut MissingMemberExpression<'a>,
+    ) {
+        let kind = AstType::MissingMemberExpression;
+        visitor.enter_node(kind);
+        visitor.visit_span(&mut it.span);
+        visitor.visit_expression(&mut it.object);
+        visitor.visit_span(&mut it.missing_property_span);
+        visitor.leave_node(kind);
+    }
+
+    #[inline]
+    pub fn walk_missing_type<'a, V: VisitMut<'a>>(visitor: &mut V, it: &mut MissingType) {
+        let kind = AstType::MissingType;
         visitor.enter_node(kind);
         visitor.visit_span(&mut it.span);
         visitor.leave_node(kind);

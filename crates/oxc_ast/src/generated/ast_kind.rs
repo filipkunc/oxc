@@ -8,7 +8,7 @@ use oxc_syntax::node::NodeId;
 use crate::ast::*;
 
 /// The largest integer value that can be mapped to an `AstType`/`AstKind` enum variant.
-pub const AST_TYPE_MAX: u8 = 192;
+pub const AST_TYPE_MAX: u8 = 195;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[repr(u8)]
@@ -206,6 +206,9 @@ pub enum AstType {
     JSDocNonNullableType = 190,
     JSDocUnknownType = 191,
     MissingExpression = 192,
+    MalformedExpression = 193,
+    MissingMemberExpression = 194,
+    MissingType = 195,
 }
 
 /// Untyped AST Node Kind
@@ -424,6 +427,10 @@ pub enum AstKind<'a> {
     JSDocNonNullableType(&'a JSDocNonNullableType<'a>) = AstType::JSDocNonNullableType as u8,
     JSDocUnknownType(&'a JSDocUnknownType) = AstType::JSDocUnknownType as u8,
     MissingExpression(&'a MissingExpression) = AstType::MissingExpression as u8,
+    MalformedExpression(&'a MalformedExpression) = AstType::MalformedExpression as u8,
+    MissingMemberExpression(&'a MissingMemberExpression<'a>) =
+        AstType::MissingMemberExpression as u8,
+    MissingType(&'a MissingType) = AstType::MissingType as u8,
 }
 
 impl AstKind<'_> {
@@ -625,6 +632,9 @@ impl AstKind<'_> {
             Self::JSDocNonNullableType(it) => it.node_id(),
             Self::JSDocUnknownType(it) => it.node_id(),
             Self::MissingExpression(it) => it.node_id(),
+            Self::MalformedExpression(it) => it.node_id(),
+            Self::MissingMemberExpression(it) => it.node_id(),
+            Self::MissingType(it) => it.node_id(),
         }
     }
 
@@ -826,6 +836,226 @@ impl AstKind<'_> {
             Self::JSDocNonNullableType(it) => it.set_node_id(node_id),
             Self::JSDocUnknownType(it) => it.set_node_id(node_id),
             Self::MissingExpression(it) => it.set_node_id(node_id),
+            Self::MalformedExpression(it) => it.set_node_id(node_id),
+            Self::MissingMemberExpression(it) => it.set_node_id(node_id),
+            Self::MissingType(it) => it.set_node_id(node_id),
+        }
+    }
+
+    /// Get the stable Rust variant name of this [`AstKind`].
+    #[inline]
+    pub const fn kind_name(&self) -> &'static str {
+        match self {
+            Self::Program(_) => stringify!(Program),
+            Self::IdentifierName(_) => stringify!(IdentifierName),
+            Self::IdentifierReference(_) => stringify!(IdentifierReference),
+            Self::BindingIdentifier(_) => stringify!(BindingIdentifier),
+            Self::LabelIdentifier(_) => stringify!(LabelIdentifier),
+            Self::ThisExpression(_) => stringify!(ThisExpression),
+            Self::ArrayExpression(_) => stringify!(ArrayExpression),
+            Self::Elision(_) => stringify!(Elision),
+            Self::ObjectExpression(_) => stringify!(ObjectExpression),
+            Self::ObjectProperty(_) => stringify!(ObjectProperty),
+            Self::TemplateLiteral(_) => stringify!(TemplateLiteral),
+            Self::TaggedTemplateExpression(_) => stringify!(TaggedTemplateExpression),
+            Self::TemplateElement(_) => stringify!(TemplateElement),
+            Self::ComputedMemberExpression(_) => stringify!(ComputedMemberExpression),
+            Self::StaticMemberExpression(_) => stringify!(StaticMemberExpression),
+            Self::PrivateFieldExpression(_) => stringify!(PrivateFieldExpression),
+            Self::CallExpression(_) => stringify!(CallExpression),
+            Self::NewExpression(_) => stringify!(NewExpression),
+            Self::ImportMeta(_) => stringify!(ImportMeta),
+            Self::NewTarget(_) => stringify!(NewTarget),
+            Self::SpreadElement(_) => stringify!(SpreadElement),
+            Self::UpdateExpression(_) => stringify!(UpdateExpression),
+            Self::UnaryExpression(_) => stringify!(UnaryExpression),
+            Self::BinaryExpression(_) => stringify!(BinaryExpression),
+            Self::PrivateInExpression(_) => stringify!(PrivateInExpression),
+            Self::LogicalExpression(_) => stringify!(LogicalExpression),
+            Self::ConditionalExpression(_) => stringify!(ConditionalExpression),
+            Self::AssignmentExpression(_) => stringify!(AssignmentExpression),
+            Self::ArrayAssignmentTarget(_) => stringify!(ArrayAssignmentTarget),
+            Self::ObjectAssignmentTarget(_) => stringify!(ObjectAssignmentTarget),
+            Self::AssignmentTargetRest(_) => stringify!(AssignmentTargetRest),
+            Self::AssignmentTargetWithDefault(_) => {
+                stringify!(AssignmentTargetWithDefault)
+            }
+            Self::AssignmentTargetPropertyIdentifier(_) => {
+                stringify!(AssignmentTargetPropertyIdentifier)
+            }
+            Self::AssignmentTargetPropertyProperty(_) => {
+                stringify!(AssignmentTargetPropertyProperty)
+            }
+            Self::SequenceExpression(_) => stringify!(SequenceExpression),
+            Self::Super(_) => stringify!(Super),
+            Self::AwaitExpression(_) => stringify!(AwaitExpression),
+            Self::ChainExpression(_) => stringify!(ChainExpression),
+            Self::ParenthesizedExpression(_) => stringify!(ParenthesizedExpression),
+            Self::Directive(_) => stringify!(Directive),
+            Self::Hashbang(_) => stringify!(Hashbang),
+            Self::BlockStatement(_) => stringify!(BlockStatement),
+            Self::VariableDeclaration(_) => stringify!(VariableDeclaration),
+            Self::VariableDeclarator(_) => stringify!(VariableDeclarator),
+            Self::EmptyStatement(_) => stringify!(EmptyStatement),
+            Self::ExpressionStatement(_) => stringify!(ExpressionStatement),
+            Self::IfStatement(_) => stringify!(IfStatement),
+            Self::DoWhileStatement(_) => stringify!(DoWhileStatement),
+            Self::WhileStatement(_) => stringify!(WhileStatement),
+            Self::ForStatement(_) => stringify!(ForStatement),
+            Self::ForInStatement(_) => stringify!(ForInStatement),
+            Self::ForOfStatement(_) => stringify!(ForOfStatement),
+            Self::ContinueStatement(_) => stringify!(ContinueStatement),
+            Self::BreakStatement(_) => stringify!(BreakStatement),
+            Self::ReturnStatement(_) => stringify!(ReturnStatement),
+            Self::WithStatement(_) => stringify!(WithStatement),
+            Self::SwitchStatement(_) => stringify!(SwitchStatement),
+            Self::SwitchCase(_) => stringify!(SwitchCase),
+            Self::LabeledStatement(_) => stringify!(LabeledStatement),
+            Self::ThrowStatement(_) => stringify!(ThrowStatement),
+            Self::TryStatement(_) => stringify!(TryStatement),
+            Self::CatchClause(_) => stringify!(CatchClause),
+            Self::CatchParameter(_) => stringify!(CatchParameter),
+            Self::DebuggerStatement(_) => stringify!(DebuggerStatement),
+            Self::AssignmentPattern(_) => stringify!(AssignmentPattern),
+            Self::ObjectPattern(_) => stringify!(ObjectPattern),
+            Self::BindingProperty(_) => stringify!(BindingProperty),
+            Self::ArrayPattern(_) => stringify!(ArrayPattern),
+            Self::BindingRestElement(_) => stringify!(BindingRestElement),
+            Self::Function(_) => stringify!(Function),
+            Self::FormalParameters(_) => stringify!(FormalParameters),
+            Self::FormalParameter(_) => stringify!(FormalParameter),
+            Self::FormalParameterRest(_) => stringify!(FormalParameterRest),
+            Self::FunctionBody(_) => stringify!(FunctionBody),
+            Self::ArrowFunctionExpression(_) => stringify!(ArrowFunctionExpression),
+            Self::YieldExpression(_) => stringify!(YieldExpression),
+            Self::Class(_) => stringify!(Class),
+            Self::ClassBody(_) => stringify!(ClassBody),
+            Self::MethodDefinition(_) => stringify!(MethodDefinition),
+            Self::PropertyDefinition(_) => stringify!(PropertyDefinition),
+            Self::PrivateIdentifier(_) => stringify!(PrivateIdentifier),
+            Self::StaticBlock(_) => stringify!(StaticBlock),
+            Self::AccessorProperty(_) => stringify!(AccessorProperty),
+            Self::ImportExpression(_) => stringify!(ImportExpression),
+            Self::ImportDeclaration(_) => stringify!(ImportDeclaration),
+            Self::ImportSpecifier(_) => stringify!(ImportSpecifier),
+            Self::ImportDefaultSpecifier(_) => stringify!(ImportDefaultSpecifier),
+            Self::ImportNamespaceSpecifier(_) => stringify!(ImportNamespaceSpecifier),
+            Self::WithClause(_) => stringify!(WithClause),
+            Self::ImportAttribute(_) => stringify!(ImportAttribute),
+            Self::ExportDeclaration(_) => stringify!(ExportDeclaration),
+            Self::ExportNamedDeclaration(_) => stringify!(ExportNamedDeclaration),
+            Self::ExportFromDeclaration(_) => stringify!(ExportFromDeclaration),
+            Self::ExportDefaultDeclaration(_) => stringify!(ExportDefaultDeclaration),
+            Self::ExportAllDeclaration(_) => stringify!(ExportAllDeclaration),
+            Self::ExportSpecifier(_) => stringify!(ExportSpecifier),
+            Self::V8IntrinsicExpression(_) => stringify!(V8IntrinsicExpression),
+            Self::BooleanLiteral(_) => stringify!(BooleanLiteral),
+            Self::NullLiteral(_) => stringify!(NullLiteral),
+            Self::NumericLiteral(_) => stringify!(NumericLiteral),
+            Self::StringLiteral(_) => stringify!(StringLiteral),
+            Self::BigIntLiteral(_) => stringify!(BigIntLiteral),
+            Self::RegExpLiteral(_) => stringify!(RegExpLiteral),
+            Self::JSXElement(_) => stringify!(JSXElement),
+            Self::JSXOpeningElement(_) => stringify!(JSXOpeningElement),
+            Self::JSXClosingElement(_) => stringify!(JSXClosingElement),
+            Self::JSXFragment(_) => stringify!(JSXFragment),
+            Self::JSXOpeningFragment(_) => stringify!(JSXOpeningFragment),
+            Self::JSXClosingFragment(_) => stringify!(JSXClosingFragment),
+            Self::JSXNamespacedName(_) => stringify!(JSXNamespacedName),
+            Self::JSXMemberExpression(_) => stringify!(JSXMemberExpression),
+            Self::JSXExpressionContainer(_) => stringify!(JSXExpressionContainer),
+            Self::JSXEmptyExpression(_) => stringify!(JSXEmptyExpression),
+            Self::JSXAttribute(_) => stringify!(JSXAttribute),
+            Self::JSXSpreadAttribute(_) => stringify!(JSXSpreadAttribute),
+            Self::JSXIdentifier(_) => stringify!(JSXIdentifier),
+            Self::JSXSpreadChild(_) => stringify!(JSXSpreadChild),
+            Self::JSXText(_) => stringify!(JSXText),
+            Self::TSThisParameter(_) => stringify!(TSThisParameter),
+            Self::TSEnumDeclaration(_) => stringify!(TSEnumDeclaration),
+            Self::TSEnumBody(_) => stringify!(TSEnumBody),
+            Self::TSEnumMember(_) => stringify!(TSEnumMember),
+            Self::TSTypeAnnotation(_) => stringify!(TSTypeAnnotation),
+            Self::TSLiteralType(_) => stringify!(TSLiteralType),
+            Self::TSConditionalType(_) => stringify!(TSConditionalType),
+            Self::TSUnionType(_) => stringify!(TSUnionType),
+            Self::TSIntersectionType(_) => stringify!(TSIntersectionType),
+            Self::TSParenthesizedType(_) => stringify!(TSParenthesizedType),
+            Self::TSTypeOperator(_) => stringify!(TSTypeOperator),
+            Self::TSArrayType(_) => stringify!(TSArrayType),
+            Self::TSIndexedAccessType(_) => stringify!(TSIndexedAccessType),
+            Self::TSTupleType(_) => stringify!(TSTupleType),
+            Self::TSNamedTupleMember(_) => stringify!(TSNamedTupleMember),
+            Self::TSOptionalType(_) => stringify!(TSOptionalType),
+            Self::TSRestType(_) => stringify!(TSRestType),
+            Self::TSAnyKeyword(_) => stringify!(TSAnyKeyword),
+            Self::TSStringKeyword(_) => stringify!(TSStringKeyword),
+            Self::TSBooleanKeyword(_) => stringify!(TSBooleanKeyword),
+            Self::TSNumberKeyword(_) => stringify!(TSNumberKeyword),
+            Self::TSNeverKeyword(_) => stringify!(TSNeverKeyword),
+            Self::TSIntrinsicKeyword(_) => stringify!(TSIntrinsicKeyword),
+            Self::TSUnknownKeyword(_) => stringify!(TSUnknownKeyword),
+            Self::TSNullKeyword(_) => stringify!(TSNullKeyword),
+            Self::TSUndefinedKeyword(_) => stringify!(TSUndefinedKeyword),
+            Self::TSVoidKeyword(_) => stringify!(TSVoidKeyword),
+            Self::TSSymbolKeyword(_) => stringify!(TSSymbolKeyword),
+            Self::TSThisType(_) => stringify!(TSThisType),
+            Self::TSObjectKeyword(_) => stringify!(TSObjectKeyword),
+            Self::TSBigIntKeyword(_) => stringify!(TSBigIntKeyword),
+            Self::TSTypeReference(_) => stringify!(TSTypeReference),
+            Self::TSQualifiedName(_) => stringify!(TSQualifiedName),
+            Self::TSTypeParameterInstantiation(_) => {
+                stringify!(TSTypeParameterInstantiation)
+            }
+            Self::TSTypeParameter(_) => stringify!(TSTypeParameter),
+            Self::TSTypeParameterDeclaration(_) => stringify!(TSTypeParameterDeclaration),
+            Self::TSTypeAliasDeclaration(_) => stringify!(TSTypeAliasDeclaration),
+            Self::TSClassImplements(_) => stringify!(TSClassImplements),
+            Self::TSInterfaceDeclaration(_) => stringify!(TSInterfaceDeclaration),
+            Self::TSInterfaceBody(_) => stringify!(TSInterfaceBody),
+            Self::TSPropertySignature(_) => stringify!(TSPropertySignature),
+            Self::TSIndexSignature(_) => stringify!(TSIndexSignature),
+            Self::TSCallSignatureDeclaration(_) => stringify!(TSCallSignatureDeclaration),
+            Self::TSMethodSignature(_) => stringify!(TSMethodSignature),
+            Self::TSConstructSignatureDeclaration(_) => {
+                stringify!(TSConstructSignatureDeclaration)
+            }
+            Self::TSIndexSignatureName(_) => stringify!(TSIndexSignatureName),
+            Self::TSInterfaceHeritage(_) => stringify!(TSInterfaceHeritage),
+            Self::TSTypePredicate(_) => stringify!(TSTypePredicate),
+            Self::TSExternalModuleDeclaration(_) => {
+                stringify!(TSExternalModuleDeclaration)
+            }
+            Self::TSNamespaceDeclaration(_) => stringify!(TSNamespaceDeclaration),
+            Self::TSGlobalDeclaration(_) => stringify!(TSGlobalDeclaration),
+            Self::TSModuleBlock(_) => stringify!(TSModuleBlock),
+            Self::TSTypeLiteral(_) => stringify!(TSTypeLiteral),
+            Self::TSInferType(_) => stringify!(TSInferType),
+            Self::TSTypeQuery(_) => stringify!(TSTypeQuery),
+            Self::TSImportType(_) => stringify!(TSImportType),
+            Self::TSImportTypeQualifiedName(_) => stringify!(TSImportTypeQualifiedName),
+            Self::TSFunctionType(_) => stringify!(TSFunctionType),
+            Self::TSConstructorType(_) => stringify!(TSConstructorType),
+            Self::TSMappedType(_) => stringify!(TSMappedType),
+            Self::TSTemplateLiteralType(_) => stringify!(TSTemplateLiteralType),
+            Self::TSAsExpression(_) => stringify!(TSAsExpression),
+            Self::TSSatisfiesExpression(_) => stringify!(TSSatisfiesExpression),
+            Self::TSTypeAssertion(_) => stringify!(TSTypeAssertion),
+            Self::TSImportEqualsDeclaration(_) => stringify!(TSImportEqualsDeclaration),
+            Self::TSExternalModuleReference(_) => stringify!(TSExternalModuleReference),
+            Self::TSNonNullExpression(_) => stringify!(TSNonNullExpression),
+            Self::Decorator(_) => stringify!(Decorator),
+            Self::TSExportAssignment(_) => stringify!(TSExportAssignment),
+            Self::TSNamespaceExportDeclaration(_) => {
+                stringify!(TSNamespaceExportDeclaration)
+            }
+            Self::TSInstantiationExpression(_) => stringify!(TSInstantiationExpression),
+            Self::JSDocNullableType(_) => stringify!(JSDocNullableType),
+            Self::JSDocNonNullableType(_) => stringify!(JSDocNonNullableType),
+            Self::JSDocUnknownType(_) => stringify!(JSDocUnknownType),
+            Self::MissingExpression(_) => stringify!(MissingExpression),
+            Self::MalformedExpression(_) => stringify!(MalformedExpression),
+            Self::MissingMemberExpression(_) => stringify!(MissingMemberExpression),
+            Self::MissingType(_) => stringify!(MissingType),
         }
     }
 }
@@ -1029,6 +1259,9 @@ impl GetSpan for AstKind<'_> {
             Self::JSDocNonNullableType(it) => it.span(),
             Self::JSDocUnknownType(it) => it.span(),
             Self::MissingExpression(it) => it.span(),
+            Self::MalformedExpression(it) => it.span(),
+            Self::MissingMemberExpression(it) => it.span(),
+            Self::MissingType(it) => it.span(),
         }
     }
 }
@@ -1233,6 +1466,9 @@ impl GetAddress for AstKind<'_> {
             Self::JSDocNonNullableType(it) => it.unstable_address(),
             Self::JSDocUnknownType(it) => it.unstable_address(),
             Self::MissingExpression(it) => it.unstable_address(),
+            Self::MalformedExpression(it) => it.unstable_address(),
+            Self::MissingMemberExpression(it) => it.unstable_address(),
+            Self::MissingType(it) => it.unstable_address(),
         }
     }
 }
@@ -2211,5 +2447,20 @@ impl<'a> AstKind<'a> {
     #[inline]
     pub fn as_missing_expression(self) -> Option<&'a MissingExpression> {
         if let Self::MissingExpression(v) = self { Some(v) } else { None }
+    }
+
+    #[inline]
+    pub fn as_malformed_expression(self) -> Option<&'a MalformedExpression> {
+        if let Self::MalformedExpression(v) = self { Some(v) } else { None }
+    }
+
+    #[inline]
+    pub fn as_missing_member_expression(self) -> Option<&'a MissingMemberExpression<'a>> {
+        if let Self::MissingMemberExpression(v) = self { Some(v) } else { None }
+    }
+
+    #[inline]
+    pub fn as_missing_type(self) -> Option<&'a MissingType> {
+        if let Self::MissingType(v) = self { Some(v) } else { None }
     }
 }

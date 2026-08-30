@@ -3,7 +3,7 @@ use oxc_ast::ast::*;
 use oxc_span::{FileExtension, GetSpan};
 
 use crate::{
-    Context, ParserConfig as Config, ParserImpl, StatementContext, diagnostics,
+    Context, ParserConfig as Config, ParserImpl, RecoveryContext, StatementContext, diagnostics,
     js::{FunctionKind, VariableDeclarationParent},
     lexer::Kind,
     modifiers::{ModifierKind, ModifierKinds, Modifiers},
@@ -345,8 +345,12 @@ impl<'a, C: Config> ParserImpl<'a, C> {
 
     fn parse_ts_interface_body(&mut self) -> ArenaBox<'a, TSInterfaceBody<'a>> {
         let start = self.cur_start();
-        let body_list =
-            self.parse_normal_list(Kind::LCurly, Kind::RCurly, Self::parse_ts_type_signature);
+        let body_list = self.parse_recoverable_normal_list(
+            RecoveryContext::TypeMembers,
+            Kind::LCurly,
+            Kind::RCurly,
+            Self::parse_ts_type_signature,
+        );
         TSInterfaceBody::boxed(self.end_span(start), body_list, self)
     }
 

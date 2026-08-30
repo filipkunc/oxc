@@ -5,7 +5,7 @@ use oxc_str::Str;
 
 use super::{VariableDeclarationParent, grammar::CoverGrammar};
 use crate::{
-    Context, ParserConfig as Config, ParserImpl, StatementContext, diagnostics,
+    Context, ParserConfig as Config, ParserImpl, RecoveryContext, StatementContext, diagnostics,
     lexer::Kind,
     modifiers::{ModifierKind, Modifiers},
 };
@@ -31,6 +31,20 @@ impl<'a, C: Config> ParserImpl<'a, C> {
     ///     `StatementListItem`[?Yield, ?Await, ?Return]
     ///     `StatementList`[?Yield, ?Await, ?Return] `StatementListItem`[?Yield, ?Await, ?Return]
     pub(crate) fn parse_directives_and_statements(
+        &mut self,
+        in_ts_namespace_body: bool,
+    ) -> (ArenaVec<'a, Directive<'a>>, ArenaVec<'a, Statement<'a>>) {
+        let context = if self.ctx.has_top_level() {
+            RecoveryContext::SourceElements
+        } else {
+            RecoveryContext::BlockStatements
+        };
+        self.recovery_context_add(context, |parser| {
+            parser.parse_directives_and_statements_impl(in_ts_namespace_body)
+        })
+    }
+
+    fn parse_directives_and_statements_impl(
         &mut self,
         in_ts_namespace_body: bool,
     ) -> (ArenaVec<'a, Directive<'a>>, ArenaVec<'a, Statement<'a>>) {
@@ -256,8 +270,10 @@ impl<'a, C: Config> ParserImpl<'a, C> {
     /// Section 14.2 Block Statement
     pub(crate) fn parse_block(&mut self) -> ArenaBox<'a, BlockStatement<'a>> {
         let start = self.cur_start();
-        let body = self.parse_normal_list(Kind::LCurly, Kind::RCurly, |p| {
-            p.parse_statement_list_item(StatementContext::StatementList)
+        let body = self.recovery_context_add(RecoveryContext::BlockStatements, |parser| {
+            parser.parse_normal_list(Kind::LCurly, Kind::RCurly, |p| {
+                p.parse_statement_list_item(StatementContext::StatementList)
+            })
         });
         BlockStatement::boxed(self.end_span(start), body, self)
     }

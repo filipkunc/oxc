@@ -3554,6 +3554,54 @@ impl MissingExpression {
     }
 }
 
+impl MalformedExpression {
+    /// Get [`NodeId`] of [`MalformedExpression`].
+    ///
+    /// Only use this method on a post-semantic AST where [`NodeId`]s are always defined.
+    #[inline]
+    pub fn node_id(&self) -> NodeId {
+        self.node_id.get()
+    }
+
+    /// Set [`NodeId`] of [`MalformedExpression`].
+    #[inline]
+    pub fn set_node_id(&self, node_id: NodeId) {
+        self.node_id.set(node_id);
+    }
+}
+
+impl MissingMemberExpression<'_> {
+    /// Get [`NodeId`] of [`MissingMemberExpression`].
+    ///
+    /// Only use this method on a post-semantic AST where [`NodeId`]s are always defined.
+    #[inline]
+    pub fn node_id(&self) -> NodeId {
+        self.node_id.get()
+    }
+
+    /// Set [`NodeId`] of [`MissingMemberExpression`].
+    #[inline]
+    pub fn set_node_id(&self, node_id: NodeId) {
+        self.node_id.set(node_id);
+    }
+}
+
+impl MissingType {
+    /// Get [`NodeId`] of [`MissingType`].
+    ///
+    /// Only use this method on a post-semantic AST where [`NodeId`]s are always defined.
+    #[inline]
+    pub fn node_id(&self) -> NodeId {
+        self.node_id.get()
+    }
+
+    /// Set [`NodeId`] of [`MissingType`].
+    #[inline]
+    pub fn set_node_id(&self, node_id: NodeId) {
+        self.node_id.set(node_id);
+    }
+}
+
 impl Expression<'_> {
     /// Get [`NodeId`] of [`Expression`].
     // `#[inline(always)]` because this should boil down to a single instruction.
@@ -3602,6 +3650,8 @@ impl Expression<'_> {
             Self::TSInstantiationExpression(it) => it.node_id(),
             Self::V8IntrinsicExpression(it) => it.node_id(),
             Self::MissingExpression(it) => it.node_id(),
+            Self::MalformedExpression(it) => it.node_id(),
+            Self::MissingMemberExpression(it) => it.node_id(),
             Self::ComputedMemberExpression(it) => it.node_id(),
             Self::StaticMemberExpression(it) => it.node_id(),
             Self::PrivateFieldExpression(it) => it.node_id(),
@@ -3659,6 +3709,8 @@ impl ArrayExpressionElement<'_> {
             Self::TSInstantiationExpression(it) => it.node_id(),
             Self::V8IntrinsicExpression(it) => it.node_id(),
             Self::MissingExpression(it) => it.node_id(),
+            Self::MalformedExpression(it) => it.node_id(),
+            Self::MissingMemberExpression(it) => it.node_id(),
             Self::ComputedMemberExpression(it) => it.node_id(),
             Self::StaticMemberExpression(it) => it.node_id(),
             Self::PrivateFieldExpression(it) => it.node_id(),
@@ -3728,6 +3780,8 @@ impl PropertyKey<'_> {
             Self::TSInstantiationExpression(it) => it.node_id(),
             Self::V8IntrinsicExpression(it) => it.node_id(),
             Self::MissingExpression(it) => it.node_id(),
+            Self::MalformedExpression(it) => it.node_id(),
+            Self::MissingMemberExpression(it) => it.node_id(),
             Self::ComputedMemberExpression(it) => it.node_id(),
             Self::StaticMemberExpression(it) => it.node_id(),
             Self::PrivateFieldExpression(it) => it.node_id(),
@@ -3797,6 +3851,8 @@ impl Argument<'_> {
             Self::TSInstantiationExpression(it) => it.node_id(),
             Self::V8IntrinsicExpression(it) => it.node_id(),
             Self::MissingExpression(it) => it.node_id(),
+            Self::MalformedExpression(it) => it.node_id(),
+            Self::MissingMemberExpression(it) => it.node_id(),
             Self::ComputedMemberExpression(it) => it.node_id(),
             Self::StaticMemberExpression(it) => it.node_id(),
             Self::PrivateFieldExpression(it) => it.node_id(),
@@ -4017,6 +4073,8 @@ impl ForStatementInit<'_> {
             Self::TSInstantiationExpression(it) => it.node_id(),
             Self::V8IntrinsicExpression(it) => it.node_id(),
             Self::MissingExpression(it) => it.node_id(),
+            Self::MalformedExpression(it) => it.node_id(),
+            Self::MissingMemberExpression(it) => it.node_id(),
             Self::ComputedMemberExpression(it) => it.node_id(),
             Self::StaticMemberExpression(it) => it.node_id(),
             Self::PrivateFieldExpression(it) => it.node_id(),
@@ -4108,6 +4166,8 @@ impl ArrowFunctionBody<'_> {
             Self::TSInstantiationExpression(it) => it.node_id(),
             Self::V8IntrinsicExpression(it) => it.node_id(),
             Self::MissingExpression(it) => it.node_id(),
+            Self::MalformedExpression(it) => it.node_id(),
+            Self::MissingMemberExpression(it) => it.node_id(),
             Self::ComputedMemberExpression(it) => it.node_id(),
             Self::StaticMemberExpression(it) => it.node_id(),
             Self::PrivateFieldExpression(it) => it.node_id(),
@@ -4224,6 +4284,8 @@ impl ExportDefaultDeclarationKind<'_> {
             Self::TSInstantiationExpression(it) => it.node_id(),
             Self::V8IntrinsicExpression(it) => it.node_id(),
             Self::MissingExpression(it) => it.node_id(),
+            Self::MalformedExpression(it) => it.node_id(),
+            Self::MissingMemberExpression(it) => it.node_id(),
             Self::ComputedMemberExpression(it) => it.node_id(),
             Self::StaticMemberExpression(it) => it.node_id(),
             Self::PrivateFieldExpression(it) => it.node_id(),
@@ -4321,6 +4383,8 @@ impl JSXExpression<'_> {
             Self::TSInstantiationExpression(it) => it.node_id(),
             Self::V8IntrinsicExpression(it) => it.node_id(),
             Self::MissingExpression(it) => it.node_id(),
+            Self::MalformedExpression(it) => it.node_id(),
+            Self::MissingMemberExpression(it) => it.node_id(),
             Self::ComputedMemberExpression(it) => it.node_id(),
             Self::StaticMemberExpression(it) => it.node_id(),
             Self::PrivateFieldExpression(it) => it.node_id(),
@@ -4454,6 +4518,7 @@ impl TSType<'_> {
             Self::JSDocNullableType(it) => it.node_id(),
             Self::JSDocNonNullableType(it) => it.node_id(),
             Self::JSDocUnknownType(it) => it.node_id(),
+            Self::MissingType(it) => it.node_id(),
         }
     }
 }
@@ -4503,6 +4568,7 @@ impl TSTupleElement<'_> {
             Self::JSDocNullableType(it) => it.node_id(),
             Self::JSDocNonNullableType(it) => it.node_id(),
             Self::JSDocUnknownType(it) => it.node_id(),
+            Self::MissingType(it) => it.node_id(),
         }
     }
 }

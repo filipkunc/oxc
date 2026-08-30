@@ -3,6 +3,39 @@
 use bitflags::bitflags;
 
 bitflags! {
+    /// Active list contexts used only by opt-in editor recovery.
+    ///
+    /// Unlike [`Context`], these flags do not affect valid grammar decisions. They identify which
+    /// enclosing parser owns a boundary token, so an erroneous inner parser can return a missing
+    /// node without consuming that token or guessing how the outer construct should continue.
+    #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+    pub(crate) struct RecoveryContext: u16 {
+        /// Statements and declarations in a source file.
+        const SourceElements = 1 << 0;
+        /// Statements and declarations terminated by a closing brace.
+        const BlockStatements = 1 << 1;
+        /// Comma-delimited properties terminated by an object expression's closing brace.
+        const ObjectProperties = 1 << 2;
+        /// Comma-delimited array elements terminated by a closing bracket.
+        const ArrayElements = 1 << 3;
+        /// Comma-delimited call/new arguments terminated by a closing parenthesis.
+        const Arguments = 1 << 4;
+        /// Comma-delimited type arguments terminated by a closing angle bracket.
+        const TypeArguments = 1 << 5;
+        /// A parenthesized type terminated by a closing parenthesis.
+        const ParenthesizedType = 1 << 6;
+        /// A postfix array type suffix terminated by a closing bracket.
+        const ArrayTypeSuffix = 1 << 7;
+        /// Comma-delimited formal parameters terminated by a closing parenthesis.
+        const Parameters = 1 << 8;
+        /// Type members terminated by an interface or type-literal closing brace.
+        const TypeMembers = 1 << 9;
+        /// Members terminated by a class-body closing brace.
+        const ClassMembers = 1 << 10;
+    }
+}
+
+bitflags! {
     /// 5.1.5 Grammar Notation
     /// A production may be parameterized by a subscripted annotation of the form “[parameters]”,
     /// which may appear as a suffix to the nonterminal symbol defined by the production.

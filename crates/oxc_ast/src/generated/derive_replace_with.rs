@@ -486,3 +486,9 @@ impl<'a> ReplaceWith<'a> for JSDocNonNullableType<'a> {}
 impl ReplaceWith<'_> for JSDocUnknownType {}
 
 impl ReplaceWith<'_> for MissingExpression {}
+
+impl ReplaceWith<'_> for MalformedExpression {}
+
+impl<'a> ReplaceWith<'a> for MissingMemberExpression<'a> {}
+
+impl ReplaceWith<'_> for MissingType {}

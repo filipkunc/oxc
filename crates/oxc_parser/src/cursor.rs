@@ -2,10 +2,11 @@
 
 use oxc_allocator::{ArenaBox, ArenaVec};
 use oxc_ast::ast::{BindingRestElement, RegExpFlags};
+use oxc_data_structures::branch_hints::unlikely;
 use oxc_span::{GetSpan, Span};
 
 use crate::{
-    Context, ParserConfig as Config, ParserImpl,
+    Context, ParseMode, ParserConfig as Config, ParserImpl, RecoveryContext, RecoveryEvent,
     diagnostics::{self, ParserDiagnostic},
     error_handler::FatalError,
     lexer::{Kind, LexerCheckpoint, Token, cold_branch},
@@ -17,10 +18,41 @@ pub struct ParserCheckpoint<'a> {
     cur_token: Token,
     prev_span_end: u32,
     errors_pos: usize,
+    recoveries_pos: usize,
     fatal_error: Option<FatalError<'a>>,
 }
 
 impl<'a, C: Config> ParserImpl<'a, C> {
+    pub(crate) fn record_recovery(&mut self, kind: &'static str, span: Span) {
+        self.recoveries.push(RecoveryEvent { kind, span });
+    }
+
+    pub(crate) fn record_missing_token_recovery(&mut self, kind: Kind, span: Span) {
+        let kind = match kind {
+            Kind::Comma => "MissingComma",
+            Kind::RCurly => "MissingClosingBrace",
+            Kind::RBrack => "MissingClosingBracket",
+            Kind::RParen => "MissingClosingParenthesis",
+            Kind::RAngle => "MissingClosingAngleBracket",
+            _ => "MissingToken",
+        };
+        self.record_recovery(kind, span);
+    }
+
+    fn last_recovery_is_missing_token(&self, kind: Kind, span: Span) -> bool {
+        let expected_kind = match kind {
+            Kind::Comma => "MissingComma",
+            Kind::RCurly => "MissingClosingBrace",
+            Kind::RBrack => "MissingClosingBracket",
+            Kind::RParen => "MissingClosingParenthesis",
+            Kind::RAngle => "MissingClosingAngleBracket",
+            _ => "MissingToken",
+        };
+        self.recoveries
+            .last()
+            .is_some_and(|recovery| recovery.kind == expected_kind && recovery.span == span)
+    }
+
     /// Get current token's span start.
     #[inline]
     pub(crate) fn cur_start(&self) -> u32 {
@@ -310,6 +342,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             cur_token: self.token,
             prev_span_end: self.prev_token_end,
             errors_pos: self.errors.len(),
+            recoveries_pos: self.recoveries.len(),
             fatal_error: self.fatal_error.take(),
         }
     }
@@ -320,18 +353,26 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             cur_token: self.token,
             prev_span_end: self.prev_token_end,
             errors_pos: self.errors.len(),
+            recoveries_pos: self.recoveries.len(),
             fatal_error: self.fatal_error.take(),
         }
     }
 
     pub(crate) fn rewind(&mut self, checkpoint: ParserCheckpoint<'a>) {
-        let ParserCheckpoint { lexer, cur_token, prev_span_end, errors_pos, fatal_error } =
-            checkpoint;
+        let ParserCheckpoint {
+            lexer,
+            cur_token,
+            prev_span_end,
+            errors_pos,
+            recoveries_pos,
+            fatal_error,
+        } = checkpoint;
 
         self.lexer.rewind(lexer);
         self.token = cur_token;
         self.prev_token_end = prev_span_end;
         self.errors.truncate(errors_pos);
+        self.recoveries.truncate(recoveries_pos);
         self.fatal_error = fatal_error;
     }
 
@@ -381,6 +422,20 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         result
     }
 
+    /// Add an editor-recovery list context for the duration of `cb`.
+    #[expect(clippy::inline_always)]
+    #[inline(always)]
+    pub(crate) fn recovery_context_add<F, T>(&mut self, context: RecoveryContext, cb: F) -> T
+    where
+        F: FnOnce(&mut Self) -> T,
+    {
+        let previous = self.recovery_ctx;
+        self.recovery_ctx.insert(context);
+        let result = cb(self);
+        self.recovery_ctx = previous;
+        result
+    }
+
     pub(crate) fn parse_normal_list<F, T>(
         &mut self,
         open: Kind,
@@ -395,6 +450,26 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         let mut list = ArenaVec::new_in(self);
         self.parse_normal_list_into(&mut list, close, f);
         self.expect_closing(close, opening_span);
+        list
+    }
+
+    pub(crate) fn parse_recoverable_normal_list<F, T>(
+        &mut self,
+        context: RecoveryContext,
+        open: Kind,
+        close: Kind,
+        mut parse_element: F,
+    ) -> ArenaVec<'a, T>
+    where
+        F: FnMut(&mut Self) -> T,
+    {
+        let opening_span = self.cur_token().span();
+        self.expect(open);
+        let mut list = ArenaVec::new_in(self);
+        self.recovery_context_add(context, |parser| {
+            parser.parse_normal_list_into(&mut list, close, &mut parse_element);
+        });
+        self.expect_recoverable_closing(close, opening_span, context);
         list
     }
 
@@ -421,11 +496,12 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         }
     }
 
-    pub(crate) fn parse_normal_list_breakable<F, T>(
+    pub(crate) fn parse_recoverable_normal_list_breakable<F, T>(
         &mut self,
+        context: RecoveryContext,
         open: Kind,
         close: Kind,
-        f: F,
+        parse_element: F,
     ) -> ArenaVec<'a, T>
     where
         F: Fn(&mut Self) -> Option<T>,
@@ -433,31 +509,23 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         let opening_span = self.cur_token().span();
         self.expect(open);
         let mut list = ArenaVec::new_in(self);
-        self.parse_normal_list_breakable_into(&mut list, close, f);
-        self.expect_closing(close, opening_span);
+        self.recovery_context_add(context, |parser| {
+            loop {
+                if parser.at(close)
+                    || matches!(parser.cur_kind(), Kind::Eof | Kind::Undetermined)
+                    || parser.has_fatal_error()
+                {
+                    break;
+                }
+                if let Some(element) = parse_element(parser) {
+                    list.push(element);
+                } else {
+                    break;
+                }
+            }
+        });
+        self.expect_recoverable_closing(close, opening_span, context);
         list
-    }
-
-    #[expect(clippy::inline_always)]
-    #[inline(always)]
-    fn parse_normal_list_breakable_into<F, T>(
-        &mut self,
-        list: &mut ArenaVec<'a, T>,
-        close: Kind,
-        parse_element: F,
-    ) where
-        F: Fn(&mut Self) -> Option<T>,
-    {
-        loop {
-            if self.at(close) || self.has_fatal_error() {
-                break;
-            }
-            if let Some(element) = parse_element(self) {
-                list.push(element);
-            } else {
-                break;
-            }
-        }
     }
 
     pub(crate) fn parse_delimited_list<F, T>(
@@ -483,13 +551,64 @@ impl<'a, C: Config> ParserImpl<'a, C> {
 
     #[expect(clippy::inline_always)]
     #[inline(always)]
+    pub(crate) fn parse_recoverable_delimited_list<F, T>(
+        &mut self,
+        context: RecoveryContext,
+        close: Kind,
+        separator: Kind,
+        opening_span: Span,
+        parse_element: F,
+    ) -> (ArenaVec<'a, T>, Option<u32>)
+    where
+        F: FnMut(&mut Self) -> T,
+    {
+        self.recovery_context_add(context, |parser| {
+            let mut list = ArenaVec::new_in(&*parser);
+            let trailing_separator = parser.parse_delimited_list_into_impl(
+                &mut list,
+                close,
+                separator,
+                opening_span,
+                parse_element,
+                Some(context),
+            );
+            (list, trailing_separator)
+        })
+    }
+
+    #[expect(clippy::inline_always)]
+    #[inline(always)]
     pub(crate) fn parse_delimited_list_into<F, T>(
         &mut self,
         list: &mut ArenaVec<'a, T>,
         close: Kind,
         separator: Kind,
         opening_span: Span,
+        parse_element: F,
+    ) -> Option<u32>
+    where
+        F: FnMut(&mut Self) -> T,
+    {
+        self.parse_delimited_list_into_impl(
+            list,
+            close,
+            separator,
+            opening_span,
+            parse_element,
+            None,
+        )
+    }
+
+    #[expect(clippy::inline_always)]
+    #[inline(always)]
+    fn parse_delimited_list_into_impl<F, T>(
+        &mut self,
+        list: &mut ArenaVec<'a, T>,
+        close: Kind,
+        separator: Kind,
+        opening_span: Span,
         mut parse_element: F,
+        recovery_context: Option<RecoveryContext>,
     ) -> Option<u32>
     where
         F: FnMut(&mut Self) -> T,
@@ -500,6 +619,31 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             || matches!(kind, Kind::Eof | Kind::Undetermined)
             || self.fatal_error.is_some()
         {
+            return None;
+        }
+        if self.options.mode == ParseMode::Editor
+            && recovery_context == Some(RecoveryContext::TypeArguments)
+            && self.at_recovery_type_argument_closing_boundary()
+        {
+            return None;
+        }
+        if unlikely(
+            self.options.mode == ParseMode::Editor
+                && recovery_context
+                    .is_some_and(|context| self.at_recovery_list_outer_boundary(context)),
+        ) {
+            let context = recovery_context.expect("checked as present");
+            let span = Span::empty(self.cur_start());
+            self.record_missing_token_recovery(close, span);
+            let diagnostic = match context {
+                RecoveryContext::ObjectProperties => {
+                    diagnostics::property_assignment_expected(span)
+                }
+                RecoveryContext::ArrayElements => diagnostics::expression_or_comma_expected(span),
+                RecoveryContext::Arguments => diagnostics::argument_expression_expected(span),
+                _ => unreachable!("only expression list contexts use delimiter recovery"),
+            };
+            self.error(diagnostic);
             return None;
         }
         let element = parse_element(self);
@@ -513,6 +657,38 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                 return None;
             }
             if kind != separator {
+                if self.options.mode == ParseMode::Editor
+                    && recovery_context == Some(RecoveryContext::TypeArguments)
+                    && self.at_recovery_type_argument_closing_boundary()
+                {
+                    return None;
+                }
+                if unlikely(
+                    self.options.mode == ParseMode::Editor
+                        && recovery_context
+                            .is_some_and(|context| self.at_recovery_list_outer_boundary(context)),
+                ) {
+                    let span = Span::empty(self.cur_start());
+                    self.record_missing_token_recovery(close, span);
+                    self.error(diagnostics::typescript_expected_token(separator.to_str(), span));
+                    return None;
+                }
+                if unlikely(self.options.mode == ParseMode::Editor)
+                    && recovery_context
+                        .is_some_and(|context| self.is_recovery_list_element_start(context))
+                {
+                    let span = Span::empty(self.cur_start());
+                    self.record_missing_token_recovery(separator, span);
+                    self.error(diagnostics::typescript_expected_token(separator.to_str(), span));
+                    let element_start = self.cur_start();
+                    let element = parse_element(self);
+                    list.push(element);
+                    debug_assert!(
+                        self.cur_start() != element_start || self.fatal_error.is_some(),
+                        "a recovered missing separator must still parse a progressing element"
+                    );
+                    continue;
+                }
                 self.set_fatal_error(diagnostics::expect_closing_or_separator(
                     close.to_str(),
                     separator.to_str(),
@@ -533,6 +709,94 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             }
             let element = parse_element(self);
             list.push(element);
+        }
+    }
+
+    fn is_recovery_list_element_start(&mut self, context: RecoveryContext) -> bool {
+        let kind = self.cur_kind();
+        if context == RecoveryContext::ObjectProperties {
+            return matches!(kind, Kind::LBrack | Kind::Star | Kind::Dot3)
+                || kind.is_literal_property_name();
+        }
+        if context.intersects(RecoveryContext::ArrayElements | RecoveryContext::Arguments) {
+            return matches!(kind, Kind::Comma | Kind::Dot3) || self.is_start_of_expression();
+        }
+        false
+    }
+
+    fn at_recovery_type_argument_closing_boundary(&self) -> bool {
+        matches!(
+            self.cur_kind(),
+            Kind::Eq
+                | Kind::Semicolon
+                | Kind::RCurly
+                | Kind::RBrack
+                | Kind::RParen
+                | Kind::Eof
+                | Kind::Undetermined
+        )
+    }
+
+    pub(crate) fn at_recovery_list_outer_boundary(&self, context: RecoveryContext) -> bool {
+        if context == RecoveryContext::Arguments
+            && self.cur_token().is_on_new_line()
+            && self
+                .recovery_ctx
+                .intersects(RecoveryContext::SourceElements | RecoveryContext::BlockStatements)
+            && matches!(self.cur_kind(), Kind::Const | Kind::Var)
+        {
+            return true;
+        }
+
+        match self.cur_kind() {
+            Kind::Eof | Kind::Undetermined => true,
+            Kind::Eq | Kind::Semicolon => context.intersects(
+                RecoveryContext::TypeArguments
+                    | RecoveryContext::ParenthesizedType
+                    | RecoveryContext::ArrayTypeSuffix,
+            ),
+            Kind::RCurly => context != RecoveryContext::ObjectProperties,
+            Kind::RBrack => {
+                context != RecoveryContext::ArrayElements
+                    && context != RecoveryContext::ArrayTypeSuffix
+            }
+            Kind::RParen => {
+                context != RecoveryContext::Arguments
+                    && context != RecoveryContext::ParenthesizedType
+                    && context != RecoveryContext::Parameters
+            }
+            Kind::RAngle => context != RecoveryContext::TypeArguments,
+            _ => false,
+        }
+    }
+
+    #[expect(clippy::inline_always)]
+    #[inline(always)]
+    pub(crate) fn expect_recoverable_closing(
+        &mut self,
+        close: Kind,
+        opening_span: Span,
+        context: RecoveryContext,
+    ) {
+        if self.at(close) {
+            self.advance(close);
+        } else if unlikely(self.options.mode == ParseMode::Editor)
+            && self.at_recovery_list_outer_boundary(context)
+        {
+            let span = Span::empty(self.cur_start());
+            if !self.last_recovery_is_missing_token(close, span) {
+                self.record_missing_token_recovery(close, span);
+                let expected = if context == RecoveryContext::Parameters
+                    && !matches!(self.cur_kind(), Kind::Eof | Kind::Undetermined)
+                {
+                    Kind::Comma
+                } else {
+                    close
+                };
+                self.error(diagnostics::typescript_expected_token(expected.to_str(), span));
+            }
+        } else {
+            self.expect_closing(close, opening_span);
         }
     }
 

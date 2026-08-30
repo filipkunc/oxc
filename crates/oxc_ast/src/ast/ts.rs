@@ -28,7 +28,7 @@ use oxc_span::{ContentEq, GetSpan, GetSpanMut, Span};
 use oxc_str::Ident;
 use oxc_syntax::{node::NodeId, scope::ScopeId};
 
-use super::{js::*, literal::*};
+use super::{js::*, literal::*, recovery::MissingType};
 
 /// TypeScript `this` parameter
 ///
@@ -288,6 +288,12 @@ pub enum TSType<'a> {
     JSDocNullableType(Box<'a, JSDocNullableType<'a>>) = 35,
     JSDocNonNullableType(Box<'a, JSDocNonNullableType<'a>>) = 36,
     JSDocUnknownType(Box<'a, JSDocUnknownType>) = 37,
+
+    /// Placeholder inserted by editor recovery when a type is missing.
+    ///
+    /// This is an internal Oxc node and is intentionally not part of ESTree output.
+    #[estree(skip)]
+    MissingType(Box<'a, MissingType>) = 38,
 }
 
 /// TypeScript Conditional Type

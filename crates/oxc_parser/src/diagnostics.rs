@@ -114,6 +114,34 @@ parser_diagnostics! {
         ts_error("1109", "Expression expected.").with_label(span)
     };
 
+    argument_expression_expected(span: Span) => {
+        ts_error("1135", "Argument expression expected.").with_label(span)
+    };
+
+    variable_declaration_expected(span: Span) => {
+        ts_error("1134", "Variable declaration expected.").with_label(span)
+    };
+
+    parameter_declaration_expected(span: Span) => {
+        ts_error("1138", "Parameter declaration expected.").with_label(span)
+    };
+
+    property_assignment_expected(span: Span) => {
+        ts_error("1136", "Property assignment expected.").with_label(span)
+    };
+
+    expression_or_comma_expected(span: Span) => {
+        ts_error("1137", "Expression or comma expected.").with_label(span)
+    };
+
+    type_expected(span: Span) => {
+        ts_error("1110", "Type expected.").with_label(span)
+    };
+
+    typescript_expected_token(expected: &'a str, span: Span) => {
+        ts_error("1005", format!("'{expected}' expected.")).with_label(span)
+    };
+
     // 'abstract' modifier can only appear on a class, method, or property declaration. (1242)
     illegal_abstract_modifier(span: Span) => {
         ts_error(
@@ -595,6 +623,10 @@ parser_diagnostics! {
 
     identifier_expected(span: Span) => {
         OxcDiagnostic::error("Identifier expected.").with_label(span)
+    };
+
+    typescript_identifier_expected(span: Span) => {
+        ts_error("1003", "Identifier expected.").with_label(span)
     };
 
     identifier_reserved_word(span: Span, reserved: &'a str) => {

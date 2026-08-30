@@ -220,6 +220,9 @@ pub enum AstNodes<'a> {
     JSDocNonNullableType(&'a AstNode<'a, JSDocNonNullableType<'a>>),
     JSDocUnknownType(&'a AstNode<'a, JSDocUnknownType>),
     MissingExpression(&'a AstNode<'a, MissingExpression>),
+    MalformedExpression(&'a AstNode<'a, MalformedExpression>),
+    MissingMemberExpression(&'a AstNode<'a, MissingMemberExpression<'a>>),
+    MissingType(&'a AstNode<'a, MissingType>),
 }
 impl AstNodes<'_> {
     /// Returns the span of this AST node.
@@ -424,6 +427,9 @@ impl AstNodes<'_> {
             Self::JSDocNonNullableType(n) => n.span(),
             Self::JSDocUnknownType(n) => n.span(),
             Self::MissingExpression(n) => n.span(),
+            Self::MalformedExpression(n) => n.span(),
+            Self::MissingMemberExpression(n) => n.span(),
+            Self::MissingType(n) => n.span(),
         }
     }
     /// Returns the parent of this AST node.
@@ -628,6 +634,9 @@ impl AstNodes<'_> {
             Self::JSDocNonNullableType(n) => n.parent(),
             Self::JSDocUnknownType(n) => n.parent(),
             Self::MissingExpression(n) => n.parent(),
+            Self::MalformedExpression(n) => n.parent(),
+            Self::MissingMemberExpression(n) => n.parent(),
+            Self::MissingType(n) => n.parent(),
         }
     }
     #[inline]
@@ -827,6 +836,9 @@ impl AstNodes<'_> {
             Self::JSDocNonNullableType(_) => "JSDocNonNullableType",
             Self::JSDocUnknownType(_) => "JSDocUnknownType",
             Self::MissingExpression(_) => "MissingExpression",
+            Self::MalformedExpression(_) => "MalformedExpression",
+            Self::MissingMemberExpression(_) => "MissingMemberExpression",
+            Self::MissingType(_) => "MissingType",
         }
     }
 }
@@ -1231,6 +1243,22 @@ impl<'a> AstNode<'a, Expression<'a>> {
             }
             Expression::MissingExpression(s) => {
                 AstNodes::MissingExpression(self.allocator.alloc(AstNode {
+                    inner: s.as_ref(),
+                    parent,
+                    allocator: self.allocator,
+                    following_span_start: self.following_span_start,
+                }))
+            }
+            Expression::MalformedExpression(s) => {
+                AstNodes::MalformedExpression(self.allocator.alloc(AstNode {
+                    inner: s.as_ref(),
+                    parent,
+                    allocator: self.allocator,
+                    following_span_start: self.following_span_start,
+                }))
+            }
+            Expression::MissingMemberExpression(s) => {
+                AstNodes::MissingMemberExpression(self.allocator.alloc(AstNode {
                     inner: s.as_ref(),
                     parent,
                     allocator: self.allocator,
@@ -7898,6 +7926,12 @@ impl<'a> AstNode<'a, TSType<'a>> {
                     following_span_start: self.following_span_start,
                 }))
             }
+            TSType::MissingType(s) => AstNodes::MissingType(self.allocator.alloc(AstNode {
+                inner: s.as_ref(),
+                parent,
+                allocator: self.allocator,
+                following_span_start: self.following_span_start,
+            })),
         };
         self.allocator.alloc(node)
     }
@@ -10734,6 +10768,75 @@ impl<'a> AstNode<'a, JSDocUnknownType> {
 }
 
 impl<'a> AstNode<'a, MissingExpression> {
+    #[inline]
+    pub fn node_id(&self) -> NodeId {
+        self.inner.node_id()
+    }
+
+    pub fn format_leading_comments(&self, f: &mut JsFormatter<'_, 'a>) {
+        format_leading_comments(self.span()).fmt(f);
+    }
+
+    pub fn format_trailing_comments(&self, f: &mut JsFormatter<'_, 'a>) {
+        format_trailing_comments(self.parent.span(), self.inner.span(), self.following_span_start)
+            .fmt(f);
+    }
+}
+
+impl<'a> AstNode<'a, MalformedExpression> {
+    #[inline]
+    pub fn node_id(&self) -> NodeId {
+        self.inner.node_id()
+    }
+
+    pub fn format_leading_comments(&self, f: &mut JsFormatter<'_, 'a>) {
+        format_leading_comments(self.span()).fmt(f);
+    }
+
+    pub fn format_trailing_comments(&self, f: &mut JsFormatter<'_, 'a>) {
+        format_trailing_comments(self.parent.span(), self.inner.span(), self.following_span_start)
+            .fmt(f);
+    }
+}
+
+impl<'a> AstNode<'a, MissingMemberExpression<'a>> {
+    #[inline]
+    pub fn node_id(&self) -> NodeId {
+        self.inner.node_id()
+    }
+
+    #[inline]
+    pub fn object(&self) -> &AstNode<'a, Expression<'a>> {
+        let following_span_start = self.inner.missing_property_span.span().start;
+        self.allocator.alloc(AstNode {
+            inner: &self.inner.object,
+            allocator: self.allocator,
+            parent: AstNodes::MissingMemberExpression(transmute_self(self)),
+            following_span_start,
+        })
+    }
+
+    #[inline]
+    pub fn missing_property_span(&self) -> Span {
+        self.inner.missing_property_span
+    }
+
+    #[inline]
+    pub fn optional(&self) -> bool {
+        self.inner.optional
+    }
+
+    pub fn format_leading_comments(&self, f: &mut JsFormatter<'_, 'a>) {
+        format_leading_comments(self.span()).fmt(f);
+    }
+
+    pub fn format_trailing_comments(&self, f: &mut JsFormatter<'_, 'a>) {
+        format_trailing_comments(self.parent.span(), self.inner.span(), self.following_span_start)
+            .fmt(f);
+    }
+}
+
+impl<'a> AstNode<'a, MissingType> {
     #[inline]
     pub fn node_id(&self) -> NodeId {
         self.inner.node_id()

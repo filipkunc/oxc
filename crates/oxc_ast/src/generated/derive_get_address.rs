@@ -56,6 +56,8 @@ impl GetAddress for Expression<'_> {
             Self::TSInstantiationExpression(it) => GetAddress::address(it),
             Self::V8IntrinsicExpression(it) => GetAddress::address(it),
             Self::MissingExpression(it) => GetAddress::address(it),
+            Self::MalformedExpression(it) => GetAddress::address(it),
+            Self::MissingMemberExpression(it) => GetAddress::address(it),
             Self::ComputedMemberExpression(it) => GetAddress::address(it),
             Self::StaticMemberExpression(it) => GetAddress::address(it),
             Self::PrivateFieldExpression(it) => GetAddress::address(it),
@@ -123,6 +125,8 @@ impl GetAddress for PropertyKey<'_> {
             Self::TSInstantiationExpression(it) => GetAddress::address(it),
             Self::V8IntrinsicExpression(it) => GetAddress::address(it),
             Self::MissingExpression(it) => GetAddress::address(it),
+            Self::MalformedExpression(it) => GetAddress::address(it),
+            Self::MissingMemberExpression(it) => GetAddress::address(it),
             Self::ComputedMemberExpression(it) => GetAddress::address(it),
             Self::StaticMemberExpression(it) => GetAddress::address(it),
             Self::PrivateFieldExpression(it) => GetAddress::address(it),
@@ -190,6 +194,8 @@ impl GetAddress for Argument<'_> {
             Self::TSInstantiationExpression(it) => GetAddress::address(it),
             Self::V8IntrinsicExpression(it) => GetAddress::address(it),
             Self::MissingExpression(it) => GetAddress::address(it),
+            Self::MalformedExpression(it) => GetAddress::address(it),
+            Self::MissingMemberExpression(it) => GetAddress::address(it),
             Self::ComputedMemberExpression(it) => GetAddress::address(it),
             Self::StaticMemberExpression(it) => GetAddress::address(it),
             Self::PrivateFieldExpression(it) => GetAddress::address(it),
@@ -401,6 +407,8 @@ impl GetAddress for ForStatementInit<'_> {
             Self::TSInstantiationExpression(it) => GetAddress::address(it),
             Self::V8IntrinsicExpression(it) => GetAddress::address(it),
             Self::MissingExpression(it) => GetAddress::address(it),
+            Self::MalformedExpression(it) => GetAddress::address(it),
+            Self::MissingMemberExpression(it) => GetAddress::address(it),
             Self::ComputedMemberExpression(it) => GetAddress::address(it),
             Self::StaticMemberExpression(it) => GetAddress::address(it),
             Self::PrivateFieldExpression(it) => GetAddress::address(it),
@@ -489,6 +497,8 @@ impl GetAddress for ArrowFunctionBody<'_> {
             Self::TSInstantiationExpression(it) => GetAddress::address(it),
             Self::V8IntrinsicExpression(it) => GetAddress::address(it),
             Self::MissingExpression(it) => GetAddress::address(it),
+            Self::MalformedExpression(it) => GetAddress::address(it),
+            Self::MissingMemberExpression(it) => GetAddress::address(it),
             Self::ComputedMemberExpression(it) => GetAddress::address(it),
             Self::StaticMemberExpression(it) => GetAddress::address(it),
             Self::PrivateFieldExpression(it) => GetAddress::address(it),
@@ -589,6 +599,8 @@ impl GetAddress for ExportDefaultDeclarationKind<'_> {
             Self::TSInstantiationExpression(it) => GetAddress::address(it),
             Self::V8IntrinsicExpression(it) => GetAddress::address(it),
             Self::MissingExpression(it) => GetAddress::address(it),
+            Self::MalformedExpression(it) => GetAddress::address(it),
+            Self::MissingMemberExpression(it) => GetAddress::address(it),
             Self::ComputedMemberExpression(it) => GetAddress::address(it),
             Self::StaticMemberExpression(it) => GetAddress::address(it),
             Self::PrivateFieldExpression(it) => GetAddress::address(it),
@@ -741,6 +753,7 @@ impl GetAddress for TSType<'_> {
             Self::JSDocNullableType(it) => GetAddress::address(it),
             Self::JSDocNonNullableType(it) => GetAddress::address(it),
             Self::JSDocUnknownType(it) => GetAddress::address(it),
+            Self::MissingType(it) => GetAddress::address(it),
         }
     }
 }
@@ -789,6 +802,7 @@ impl GetAddress for TSTupleElement<'_> {
             Self::JSDocNullableType(it) => GetAddress::address(it),
             Self::JSDocNonNullableType(it) => GetAddress::address(it),
             Self::JSDocUnknownType(it) => GetAddress::address(it),
+            Self::MissingType(it) => GetAddress::address(it),
         }
     }
 }

@@ -3,6 +3,7 @@
 //! * `AstType` type definition.
 //! * `AstKind` type definition.
 //! * `AstKind::ty` method.
+//! * `AstKind::kind_name` method.
 //! * `AstKind::node_id` & `AstKind::set_node_id` methods.
 //! * `AstKind::as_*` methods.
 //! * `GetSpan` impl for `AstKind`.
@@ -55,6 +56,7 @@ impl Generator for AstKindGenerator {
         let mut address_match_arms = quote!();
         let mut node_id_match_arms = quote!();
         let mut set_node_id_match_arms = quote!();
+        let mut kind_name_match_arms = quote!();
         let mut as_methods = quote!();
 
         let mut next_index = 0u16;
@@ -78,6 +80,7 @@ impl Generator for AstKindGenerator {
             node_id_match_arms.extend(quote!( Self::#type_ident(it) => it.node_id(), ));
             set_node_id_match_arms
                 .extend(quote!( Self::#type_ident(it) => it.set_node_id(node_id), ));
+            kind_name_match_arms.extend(quote!( Self::#type_ident(_) => stringify!(#type_ident), ));
 
             let as_method_name = format_ident!("as_{}", struct_def.snake_name());
             as_methods.extend(quote! {
@@ -144,6 +147,15 @@ impl Generator for AstKindGenerator {
                 pub fn set_node_id(&self, node_id: NodeId) {
                     match self {
                         #set_node_id_match_arms
+                    }
+                }
+
+                ///@@line_break
+                /// Get the stable Rust variant name of this [`AstKind`].
+                #[inline]
+                pub const fn kind_name(&self) -> &'static str {
+                    match self {
+                        #kind_name_match_arms
                     }
                 }
             }

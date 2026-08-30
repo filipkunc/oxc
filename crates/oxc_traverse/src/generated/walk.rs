@@ -198,6 +198,12 @@ unsafe fn walk_expression<'a, State, Tr: Traverse<'a, State>>(
         Expression::MissingExpression(node) => {
             walk_missing_expression(traverser, (&mut **node) as *mut _, ctx)
         }
+        Expression::MalformedExpression(node) => {
+            walk_malformed_expression(traverser, (&mut **node) as *mut _, ctx)
+        }
+        Expression::MissingMemberExpression(node) => {
+            walk_missing_member_expression(traverser, (&mut **node) as *mut _, ctx)
+        }
         Expression::ComputedMemberExpression(_)
         | Expression::StaticMemberExpression(_)
         | Expression::PrivateFieldExpression(_) => {
@@ -325,6 +331,8 @@ unsafe fn walk_array_expression_element<'a, State, Tr: Traverse<'a, State>>(
         | ArrayExpressionElement::TSInstantiationExpression(_)
         | ArrayExpressionElement::V8IntrinsicExpression(_)
         | ArrayExpressionElement::MissingExpression(_)
+        | ArrayExpressionElement::MalformedExpression(_)
+        | ArrayExpressionElement::MissingMemberExpression(_)
         | ArrayExpressionElement::ComputedMemberExpression(_)
         | ArrayExpressionElement::StaticMemberExpression(_)
         | ArrayExpressionElement::PrivateFieldExpression(_) => {
@@ -457,6 +465,8 @@ unsafe fn walk_property_key<'a, State, Tr: Traverse<'a, State>>(
         | PropertyKey::TSInstantiationExpression(_)
         | PropertyKey::V8IntrinsicExpression(_)
         | PropertyKey::MissingExpression(_)
+        | PropertyKey::MalformedExpression(_)
+        | PropertyKey::MissingMemberExpression(_)
         | PropertyKey::ComputedMemberExpression(_)
         | PropertyKey::StaticMemberExpression(_)
         | PropertyKey::PrivateFieldExpression(_) => walk_expression(traverser, node as *mut _, ctx),
@@ -775,6 +785,8 @@ unsafe fn walk_argument<'a, State, Tr: Traverse<'a, State>>(
         | Argument::TSInstantiationExpression(_)
         | Argument::V8IntrinsicExpression(_)
         | Argument::MissingExpression(_)
+        | Argument::MalformedExpression(_)
+        | Argument::MissingMemberExpression(_)
         | Argument::ComputedMemberExpression(_)
         | Argument::StaticMemberExpression(_)
         | Argument::PrivateFieldExpression(_) => walk_expression(traverser, node as *mut _, ctx),
@@ -1743,6 +1755,8 @@ unsafe fn walk_for_statement_init<'a, State, Tr: Traverse<'a, State>>(
         | ForStatementInit::TSInstantiationExpression(_)
         | ForStatementInit::V8IntrinsicExpression(_)
         | ForStatementInit::MissingExpression(_)
+        | ForStatementInit::MalformedExpression(_)
+        | ForStatementInit::MissingMemberExpression(_)
         | ForStatementInit::ComputedMemberExpression(_)
         | ForStatementInit::StaticMemberExpression(_)
         | ForStatementInit::PrivateFieldExpression(_) => {
@@ -2502,6 +2516,8 @@ unsafe fn walk_arrow_function_body<'a, State, Tr: Traverse<'a, State>>(
         | ArrowFunctionBody::TSInstantiationExpression(_)
         | ArrowFunctionBody::V8IntrinsicExpression(_)
         | ArrowFunctionBody::MissingExpression(_)
+        | ArrowFunctionBody::MalformedExpression(_)
+        | ArrowFunctionBody::MissingMemberExpression(_)
         | ArrowFunctionBody::ComputedMemberExpression(_)
         | ArrowFunctionBody::StaticMemberExpression(_)
         | ArrowFunctionBody::PrivateFieldExpression(_) => {
@@ -3285,6 +3301,8 @@ unsafe fn walk_export_default_declaration_kind<'a, State, Tr: Traverse<'a, State
         | ExportDefaultDeclarationKind::TSInstantiationExpression(_)
         | ExportDefaultDeclarationKind::V8IntrinsicExpression(_)
         | ExportDefaultDeclarationKind::MissingExpression(_)
+        | ExportDefaultDeclarationKind::MalformedExpression(_)
+        | ExportDefaultDeclarationKind::MissingMemberExpression(_)
         | ExportDefaultDeclarationKind::ComputedMemberExpression(_)
         | ExportDefaultDeclarationKind::StaticMemberExpression(_)
         | ExportDefaultDeclarationKind::PrivateFieldExpression(_) => {
@@ -3689,6 +3707,8 @@ unsafe fn walk_jsx_expression<'a, State, Tr: Traverse<'a, State>>(
         | JSXExpression::TSInstantiationExpression(_)
         | JSXExpression::V8IntrinsicExpression(_)
         | JSXExpression::MissingExpression(_)
+        | JSXExpression::MalformedExpression(_)
+        | JSXExpression::MissingMemberExpression(_)
         | JSXExpression::ComputedMemberExpression(_)
         | JSXExpression::StaticMemberExpression(_)
         | JSXExpression::PrivateFieldExpression(_) => {
@@ -4140,6 +4160,7 @@ unsafe fn walk_ts_type<'a, State, Tr: Traverse<'a, State>>(
         TSType::JSDocUnknownType(node) => {
             walk_js_doc_unknown_type(traverser, (&mut **node) as *mut _, ctx)
         }
+        TSType::MissingType(node) => walk_missing_type(traverser, (&mut **node) as *mut _, ctx),
     }
     traverser.exit_ts_type(&mut *node, ctx);
 }
@@ -4431,7 +4452,8 @@ unsafe fn walk_ts_tuple_element<'a, State, Tr: Traverse<'a, State>>(
         | TSTupleElement::TSParenthesizedType(_)
         | TSTupleElement::JSDocNullableType(_)
         | TSTupleElement::JSDocNonNullableType(_)
-        | TSTupleElement::JSDocUnknownType(_) => walk_ts_type(traverser, node as *mut _, ctx),
+        | TSTupleElement::JSDocUnknownType(_)
+        | TSTupleElement::MissingType(_) => walk_ts_type(traverser, node as *mut _, ctx),
     }
     traverser.exit_ts_tuple_element(&mut *node, ctx);
 }
@@ -5893,6 +5915,42 @@ unsafe fn walk_missing_expression<'a, State, Tr: Traverse<'a, State>>(
 ) {
     traverser.enter_missing_expression(&mut *node, ctx);
     traverser.exit_missing_expression(&mut *node, ctx);
+}
+
+unsafe fn walk_malformed_expression<'a, State, Tr: Traverse<'a, State>>(
+    traverser: &mut Tr,
+    node: *mut MalformedExpression,
+    ctx: &mut TraverseCtx<'a, State>,
+) {
+    traverser.enter_malformed_expression(&mut *node, ctx);
+    traverser.exit_malformed_expression(&mut *node, ctx);
+}
+
+unsafe fn walk_missing_member_expression<'a, State, Tr: Traverse<'a, State>>(
+    traverser: &mut Tr,
+    node: *mut MissingMemberExpression<'a>,
+    ctx: &mut TraverseCtx<'a, State>,
+) {
+    traverser.enter_missing_member_expression(&mut *node, ctx);
+    let pop_token = ctx.push_stack(Ancestor::MissingMemberExpressionObject(
+        ancestor::MissingMemberExpressionWithoutObject(node, PhantomData),
+    ));
+    walk_expression(
+        traverser,
+        (node as *mut u8).add(ancestor::OFFSET_MISSING_MEMBER_EXPRESSION_OBJECT) as *mut Expression,
+        ctx,
+    );
+    ctx.pop_stack(pop_token);
+    traverser.exit_missing_member_expression(&mut *node, ctx);
+}
+
+unsafe fn walk_missing_type<'a, State, Tr: Traverse<'a, State>>(
+    traverser: &mut Tr,
+    node: *mut MissingType,
+    ctx: &mut TraverseCtx<'a, State>,
+) {
+    traverser.enter_missing_type(&mut *node, ctx);
+    traverser.exit_missing_type(&mut *node, ctx);
 }
 
 unsafe fn walk_statements<'a, State, Tr: Traverse<'a, State>>(

@@ -4,7 +4,8 @@ use oxc_span::{GetSpan, Span};
 
 use super::FunctionKind;
 use crate::{
-    Context, ParserConfig as Config, ParserImpl, StatementContext, diagnostics,
+    Context, ParseMode, ParserConfig as Config, ParserImpl, RecoveryContext, StatementContext,
+    diagnostics,
     lexer::Kind,
     modifiers::{ModifierKind, ModifierKinds, Modifiers},
 };
@@ -38,7 +39,11 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             p.parse_directives_and_statements(/* in_ts_namespace_body */ false)
         });
 
-        self.expect_closing(Kind::RCurly, opening_span);
+        self.expect_recoverable_closing(
+            Kind::RCurly,
+            opening_span,
+            RecoveryContext::BlockStatements,
+        );
         FunctionBody::boxed(self.end_span(start), directives, statements, self)
     }
 
@@ -57,8 +62,10 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         } else {
             None
         };
-        let (list, rest) = self.parse_formal_parameters_list(func_kind, opening_span);
-        self.expect(Kind::RParen);
+        let (list, rest) = self.recovery_context_add(RecoveryContext::Parameters, |parser| {
+            parser.parse_formal_parameters_list(func_kind, opening_span)
+        });
+        self.expect_recoverable_closing(Kind::RParen, opening_span, RecoveryContext::Parameters);
 
         let formal_parameters =
             FormalParameters::boxed(self.end_span(start), params_kind, list, rest, self);
@@ -95,12 +102,44 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             {
                 break;
             }
+            if self.options.mode == ParseMode::Editor
+                && self.at_recovery_list_outer_boundary(RecoveryContext::Parameters)
+            {
+                break;
+            }
+
+            if self.options.mode == ParseMode::Editor && first && kind == Kind::Comma {
+                self.recover_missing_parameter();
+                self.bump_any();
+                continue;
+            }
 
             if first {
                 first = false;
             } else {
                 let comma_span = self.cur_token().span();
-                if kind != Kind::Comma {
+                if kind == Kind::Comma {
+                    self.bump_any();
+                    let kind = self.cur_kind();
+                    if kind == Kind::RParen {
+                        if rest.is_some() && !self.ctx.has_ambient() {
+                            self.error(diagnostics::rest_element_trailing_comma(comma_span));
+                        }
+                        break;
+                    }
+                    if self.options.mode == ParseMode::Editor && kind == Kind::Comma {
+                        self.recover_missing_parameter();
+                        self.bump_any();
+                        first = true;
+                        continue;
+                    }
+                } else if self.options.mode == ParseMode::Editor
+                    && self.is_recovery_parameter_start()
+                {
+                    let span = Span::empty(self.cur_start());
+                    self.record_missing_token_recovery(Kind::Comma, span);
+                    self.error(diagnostics::typescript_expected_token(",", span));
+                } else {
                     let error = diagnostics::expect_closing_or_separator(
                         Kind::RParen.to_str(),
                         Kind::Comma.to_str(),
@@ -109,14 +148,6 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                         opening_span,
                     );
                     self.set_fatal_error(error);
-                    break;
-                }
-                self.bump_any();
-                let kind = self.cur_kind();
-                if kind == Kind::RParen {
-                    if rest.is_some() && !self.ctx.has_ambient() {
-                        self.error(diagnostics::rest_element_trailing_comma(comma_span));
-                    }
                     break;
                 }
             }
@@ -170,6 +201,18 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         }
 
         rest
+    }
+
+    fn is_recovery_parameter_start(&self) -> bool {
+        matches!(self.cur_kind(), Kind::At | Kind::Dot3 | Kind::LCurly | Kind::LBrack)
+            || self.cur_kind().is_binding_identifier()
+            || self.cur_kind().is_modifier_kind()
+    }
+
+    fn recover_missing_parameter(&mut self) {
+        let diagnostic_span = self.cur_token().span();
+        self.record_recovery("MissingParameter", Span::empty(diagnostic_span.start));
+        self.error(diagnostics::parameter_declaration_expected(diagnostic_span));
     }
 
     fn parse_formal_parameter_with_decorators(

@@ -278,6 +278,20 @@ impl NeedsParentheses<'_> for AstNode<'_, MissingExpression> {
     }
 }
 
+impl NeedsParentheses<'_> for AstNode<'_, MalformedExpression> {
+    #[inline]
+    fn needs_parentheses(&self, _f: &JsFormatter<'_, '_>) -> bool {
+        false
+    }
+}
+
+impl NeedsParentheses<'_> for AstNode<'_, MissingMemberExpression<'_>> {
+    #[inline]
+    fn needs_parentheses(&self, _f: &JsFormatter<'_, '_>) -> bool {
+        false
+    }
+}
+
 impl NeedsParentheses<'_> for AstNode<'_, ArrayExpression<'_>> {
     fn needs_parentheses(&self, _f: &JsFormatter<'_, '_>) -> bool {
         // Wrap array expressions in for-in initializers

@@ -70,6 +70,8 @@ impl ContentEq for Expression<'_> {
             }
             (Self::V8IntrinsicExpression(a), Self::V8IntrinsicExpression(b)) => a.content_eq(b),
             (Self::MissingExpression(a), Self::MissingExpression(b)) => a.content_eq(b),
+            (Self::MalformedExpression(a), Self::MalformedExpression(b)) => a.content_eq(b),
+            (Self::MissingMemberExpression(a), Self::MissingMemberExpression(b)) => a.content_eq(b),
             (Self::ComputedMemberExpression(a), Self::ComputedMemberExpression(b)) => {
                 a.content_eq(b)
             }
@@ -167,6 +169,8 @@ impl ContentEq for ArrayExpressionElement<'_> {
             }
             (Self::V8IntrinsicExpression(a), Self::V8IntrinsicExpression(b)) => a.content_eq(b),
             (Self::MissingExpression(a), Self::MissingExpression(b)) => a.content_eq(b),
+            (Self::MalformedExpression(a), Self::MalformedExpression(b)) => a.content_eq(b),
+            (Self::MissingMemberExpression(a), Self::MissingMemberExpression(b)) => a.content_eq(b),
             (Self::ComputedMemberExpression(a), Self::ComputedMemberExpression(b)) => {
                 a.content_eq(b)
             }
@@ -261,6 +265,8 @@ impl ContentEq for PropertyKey<'_> {
             }
             (Self::V8IntrinsicExpression(a), Self::V8IntrinsicExpression(b)) => a.content_eq(b),
             (Self::MissingExpression(a), Self::MissingExpression(b)) => a.content_eq(b),
+            (Self::MalformedExpression(a), Self::MalformedExpression(b)) => a.content_eq(b),
+            (Self::MissingMemberExpression(a), Self::MissingMemberExpression(b)) => a.content_eq(b),
             (Self::ComputedMemberExpression(a), Self::ComputedMemberExpression(b)) => {
                 a.content_eq(b)
             }
@@ -431,6 +437,8 @@ impl ContentEq for Argument<'_> {
             }
             (Self::V8IntrinsicExpression(a), Self::V8IntrinsicExpression(b)) => a.content_eq(b),
             (Self::MissingExpression(a), Self::MissingExpression(b)) => a.content_eq(b),
+            (Self::MalformedExpression(a), Self::MalformedExpression(b)) => a.content_eq(b),
+            (Self::MissingMemberExpression(a), Self::MissingMemberExpression(b)) => a.content_eq(b),
             (Self::ComputedMemberExpression(a), Self::ComputedMemberExpression(b)) => {
                 a.content_eq(b)
             }
@@ -884,6 +892,8 @@ impl ContentEq for ForStatementInit<'_> {
             }
             (Self::V8IntrinsicExpression(a), Self::V8IntrinsicExpression(b)) => a.content_eq(b),
             (Self::MissingExpression(a), Self::MissingExpression(b)) => a.content_eq(b),
+            (Self::MalformedExpression(a), Self::MalformedExpression(b)) => a.content_eq(b),
+            (Self::MissingMemberExpression(a), Self::MissingMemberExpression(b)) => a.content_eq(b),
             (Self::ComputedMemberExpression(a), Self::ComputedMemberExpression(b)) => {
                 a.content_eq(b)
             }
@@ -1177,6 +1187,8 @@ impl ContentEq for ArrowFunctionBody<'_> {
             }
             (Self::V8IntrinsicExpression(a), Self::V8IntrinsicExpression(b)) => a.content_eq(b),
             (Self::MissingExpression(a), Self::MissingExpression(b)) => a.content_eq(b),
+            (Self::MalformedExpression(a), Self::MalformedExpression(b)) => a.content_eq(b),
+            (Self::MissingMemberExpression(a), Self::MissingMemberExpression(b)) => a.content_eq(b),
             (Self::ComputedMemberExpression(a), Self::ComputedMemberExpression(b)) => {
                 a.content_eq(b)
             }
@@ -1540,6 +1552,8 @@ impl ContentEq for ExportDefaultDeclarationKind<'_> {
             }
             (Self::V8IntrinsicExpression(a), Self::V8IntrinsicExpression(b)) => a.content_eq(b),
             (Self::MissingExpression(a), Self::MissingExpression(b)) => a.content_eq(b),
+            (Self::MalformedExpression(a), Self::MalformedExpression(b)) => a.content_eq(b),
+            (Self::MissingMemberExpression(a), Self::MissingMemberExpression(b)) => a.content_eq(b),
             (Self::ComputedMemberExpression(a), Self::ComputedMemberExpression(b)) => {
                 a.content_eq(b)
             }
@@ -1754,6 +1768,8 @@ impl ContentEq for JSXExpression<'_> {
             }
             (Self::V8IntrinsicExpression(a), Self::V8IntrinsicExpression(b)) => a.content_eq(b),
             (Self::MissingExpression(a), Self::MissingExpression(b)) => a.content_eq(b),
+            (Self::MalformedExpression(a), Self::MalformedExpression(b)) => a.content_eq(b),
+            (Self::MissingMemberExpression(a), Self::MissingMemberExpression(b)) => a.content_eq(b),
             (Self::ComputedMemberExpression(a), Self::ComputedMemberExpression(b)) => {
                 a.content_eq(b)
             }
@@ -1952,6 +1968,7 @@ impl ContentEq for TSType<'_> {
             (Self::JSDocNullableType(a), Self::JSDocNullableType(b)) => a.content_eq(b),
             (Self::JSDocNonNullableType(a), Self::JSDocNonNullableType(b)) => a.content_eq(b),
             (Self::JSDocUnknownType(a), Self::JSDocUnknownType(b)) => a.content_eq(b),
+            (Self::MissingType(a), Self::MissingType(b)) => a.content_eq(b),
             _ => false,
         }
     }
@@ -2078,6 +2095,7 @@ impl ContentEq for TSTupleElement<'_> {
             (Self::JSDocNullableType(a), Self::JSDocNullableType(b)) => a.content_eq(b),
             (Self::JSDocNonNullableType(a), Self::JSDocNonNullableType(b)) => a.content_eq(b),
             (Self::JSDocUnknownType(a), Self::JSDocUnknownType(b)) => a.content_eq(b),
+            (Self::MissingType(a), Self::MissingType(b)) => a.content_eq(b),
             _ => false,
         }
     }
@@ -2636,6 +2654,25 @@ impl ContentEq for Comment {
 }
 
 impl ContentEq for MissingExpression {
+    fn content_eq(&self, _: &Self) -> bool {
+        true
+    }
+}
+
+impl ContentEq for MalformedExpression {
+    fn content_eq(&self, _: &Self) -> bool {
+        true
+    }
+}
+
+impl ContentEq for MissingMemberExpression<'_> {
+    fn content_eq(&self, other: &Self) -> bool {
+        ContentEq::content_eq(&self.object, &other.object)
+            && ContentEq::content_eq(&self.optional, &other.optional)
+    }
+}
+
+impl ContentEq for MissingType {
     fn content_eq(&self, _: &Self) -> bool {
         true
     }

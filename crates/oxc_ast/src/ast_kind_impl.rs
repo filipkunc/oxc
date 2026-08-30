@@ -111,7 +111,7 @@ impl<'a> AstKind<'a> {
                 | Self::TSStringKeyword(_) | Self::TSSymbolKeyword(_) | Self::TSUndefinedKeyword(_) | Self::TSUnknownKeyword(_)
                 | Self::TSVoidKeyword(_) | Self::TSIndexedAccessType(_) | Self::TSInferType(_) | Self::TSIntersectionType(_)
                 | Self::TSLiteralType(_) | Self::TSMethodSignature(_) | Self::TSTemplateLiteralType(_) | Self::TSThisType(_)
-                | Self::TSTypeLiteral(_) | Self::TSTypeReference(_) | Self::TSUnionType(_))
+                | Self::TSTypeLiteral(_) | Self::TSTypeReference(_) | Self::TSUnionType(_) | Self::MissingType(_))
     }
 
     /// Check if this AST node is a literal
@@ -301,6 +301,8 @@ impl<'a> AstKind<'a> {
             Expression::TSInstantiationExpression(e) => Self::TSInstantiationExpression(e),
             Expression::V8IntrinsicExpression(e) => Self::V8IntrinsicExpression(e),
             Expression::MissingExpression(e) => Self::MissingExpression(e),
+            Expression::MalformedExpression(e) => Self::MalformedExpression(e),
+            Expression::MissingMemberExpression(e) => Self::MissingMemberExpression(e),
         }
     }
 
@@ -384,6 +386,9 @@ impl AstKind<'_> {
         match self {
             Self::Program(_) => "Program".into(),
             Self::MissingExpression(_) => "MissingExpression".into(),
+            Self::MalformedExpression(_) => "MalformedExpression".into(),
+            Self::MissingMemberExpression(_) => "MissingMemberExpression".into(),
+            Self::MissingType(_) => "MissingType".into(),
             Self::Directive(d) => d.directive.as_ref().into(),
             Self::Hashbang(_) => "Hashbang".into(),
             Self::BlockStatement(_) => "BlockStatement".into(),

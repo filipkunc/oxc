@@ -206,6 +206,12 @@ impl<'new_alloc> CloneIn<'new_alloc> for Expression<'_> {
                 with_semantic_ids,
                 allocator,
             )),
+            Self::MalformedExpression(it) => Expression::MalformedExpression(
+                CloneIn::clone_in_impl(it, with_semantic_ids, allocator),
+            ),
+            Self::MissingMemberExpression(it) => Expression::MissingMemberExpression(
+                CloneIn::clone_in_impl(it, with_semantic_ids, allocator),
+            ),
             Self::ComputedMemberExpression(_)
             | Self::StaticMemberExpression(_)
             | Self::PrivateFieldExpression(_) => Expression::from(CloneIn::clone_in_impl(
@@ -379,6 +385,8 @@ impl<'new_alloc> CloneIn<'new_alloc> for ArrayExpressionElement<'_> {
             | Self::TSInstantiationExpression(_)
             | Self::V8IntrinsicExpression(_)
             | Self::MissingExpression(_)
+            | Self::MalformedExpression(_)
+            | Self::MissingMemberExpression(_)
             | Self::ComputedMemberExpression(_)
             | Self::StaticMemberExpression(_)
             | Self::PrivateFieldExpression(_) => ArrayExpressionElement::from(
@@ -524,6 +532,8 @@ impl<'new_alloc> CloneIn<'new_alloc> for PropertyKey<'_> {
             | Self::TSInstantiationExpression(_)
             | Self::V8IntrinsicExpression(_)
             | Self::MissingExpression(_)
+            | Self::MalformedExpression(_)
+            | Self::MissingMemberExpression(_)
             | Self::ComputedMemberExpression(_)
             | Self::StaticMemberExpression(_)
             | Self::PrivateFieldExpression(_) => PropertyKey::from(CloneIn::clone_in_impl(
@@ -847,6 +857,8 @@ impl<'new_alloc> CloneIn<'new_alloc> for Argument<'_> {
             | Self::TSInstantiationExpression(_)
             | Self::V8IntrinsicExpression(_)
             | Self::MissingExpression(_)
+            | Self::MalformedExpression(_)
+            | Self::MissingMemberExpression(_)
             | Self::ComputedMemberExpression(_)
             | Self::StaticMemberExpression(_)
             | Self::PrivateFieldExpression(_) => Argument::from(CloneIn::clone_in_impl(
@@ -1751,6 +1763,8 @@ impl<'new_alloc> CloneIn<'new_alloc> for ForStatementInit<'_> {
             | Self::TSInstantiationExpression(_)
             | Self::V8IntrinsicExpression(_)
             | Self::MissingExpression(_)
+            | Self::MalformedExpression(_)
+            | Self::MissingMemberExpression(_)
             | Self::ComputedMemberExpression(_)
             | Self::StaticMemberExpression(_)
             | Self::PrivateFieldExpression(_) => ForStatementInit::from(CloneIn::clone_in_impl(
@@ -2372,6 +2386,8 @@ impl<'new_alloc> CloneIn<'new_alloc> for ArrowFunctionBody<'_> {
             | Self::TSInstantiationExpression(_)
             | Self::V8IntrinsicExpression(_)
             | Self::MissingExpression(_)
+            | Self::MalformedExpression(_)
+            | Self::MissingMemberExpression(_)
             | Self::ComputedMemberExpression(_)
             | Self::StaticMemberExpression(_)
             | Self::PrivateFieldExpression(_) => ArrowFunctionBody::from(CloneIn::clone_in_impl(
@@ -3137,6 +3153,8 @@ impl<'new_alloc> CloneIn<'new_alloc> for ExportDefaultDeclarationKind<'_> {
             | Self::TSInstantiationExpression(_)
             | Self::V8IntrinsicExpression(_)
             | Self::MissingExpression(_)
+            | Self::MalformedExpression(_)
+            | Self::MissingMemberExpression(_)
             | Self::ComputedMemberExpression(_)
             | Self::StaticMemberExpression(_)
             | Self::PrivateFieldExpression(_) => ExportDefaultDeclarationKind::from(
@@ -3607,6 +3625,8 @@ impl<'new_alloc> CloneIn<'new_alloc> for JSXExpression<'_> {
             | Self::TSInstantiationExpression(_)
             | Self::V8IntrinsicExpression(_)
             | Self::MissingExpression(_)
+            | Self::MalformedExpression(_)
+            | Self::MissingMemberExpression(_)
             | Self::ComputedMemberExpression(_)
             | Self::StaticMemberExpression(_)
             | Self::PrivateFieldExpression(_) => JSXExpression::from(CloneIn::clone_in_impl(
@@ -4119,6 +4139,9 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSType<'_> {
             Self::JSDocUnknownType(it) => {
                 TSType::JSDocUnknownType(CloneIn::clone_in_impl(it, with_semantic_ids, allocator))
             }
+            Self::MissingType(it) => {
+                TSType::MissingType(CloneIn::clone_in_impl(it, with_semantic_ids, allocator))
+            }
         }
     }
 }
@@ -4396,7 +4419,8 @@ impl<'new_alloc> CloneIn<'new_alloc> for TSTupleElement<'_> {
             | Self::TSParenthesizedType(_)
             | Self::JSDocNullableType(_)
             | Self::JSDocNonNullableType(_)
-            | Self::JSDocUnknownType(_) => TSTupleElement::from(CloneIn::clone_in_impl(
+            | Self::JSDocUnknownType(_)
+            | Self::MissingType(_) => TSTupleElement::from(CloneIn::clone_in_impl(
                 self.to_ts_type(),
                 with_semantic_ids,
                 allocator,
@@ -5825,6 +5849,58 @@ impl<'new_alloc> CloneIn<'new_alloc> for MissingExpression {
         allocator: &'new_alloc Allocator,
     ) -> Self::Cloned {
         MissingExpression {
+            node_id: CloneIn::clone_in_impl(&self.node_id, with_semantic_ids, allocator),
+            span: CloneIn::clone_in_impl(&self.span, with_semantic_ids, allocator),
+        }
+    }
+}
+
+impl<'new_alloc> CloneIn<'new_alloc> for MalformedExpression {
+    type Cloned = MalformedExpression;
+
+    fn clone_in_impl(
+        &self,
+        with_semantic_ids: CloneInSemanticIds,
+        allocator: &'new_alloc Allocator,
+    ) -> Self::Cloned {
+        MalformedExpression {
+            node_id: CloneIn::clone_in_impl(&self.node_id, with_semantic_ids, allocator),
+            span: CloneIn::clone_in_impl(&self.span, with_semantic_ids, allocator),
+        }
+    }
+}
+
+impl<'new_alloc> CloneIn<'new_alloc> for MissingMemberExpression<'_> {
+    type Cloned = MissingMemberExpression<'new_alloc>;
+
+    fn clone_in_impl(
+        &self,
+        with_semantic_ids: CloneInSemanticIds,
+        allocator: &'new_alloc Allocator,
+    ) -> Self::Cloned {
+        MissingMemberExpression {
+            node_id: CloneIn::clone_in_impl(&self.node_id, with_semantic_ids, allocator),
+            span: CloneIn::clone_in_impl(&self.span, with_semantic_ids, allocator),
+            object: CloneIn::clone_in_impl(&self.object, with_semantic_ids, allocator),
+            missing_property_span: CloneIn::clone_in_impl(
+                &self.missing_property_span,
+                with_semantic_ids,
+                allocator,
+            ),
+            optional: CloneIn::clone_in_impl(&self.optional, with_semantic_ids, allocator),
+        }
+    }
+}
+
+impl<'new_alloc> CloneIn<'new_alloc> for MissingType {
+    type Cloned = MissingType;
+
+    fn clone_in_impl(
+        &self,
+        with_semantic_ids: CloneInSemanticIds,
+        allocator: &'new_alloc Allocator,
+    ) -> Self::Cloned {
+        MissingType {
             node_id: CloneIn::clone_in_impl(&self.node_id, with_semantic_ids, allocator),
             span: CloneIn::clone_in_impl(&self.span, with_semantic_ids, allocator),
         }
