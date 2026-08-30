@@ -1,0 +1,38 @@
+name: Fork CI
+
+permissions: {}
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  editor-recovery:
+    name: Editor recovery release gates
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: taiki-e/checkout-action@7d1e50e93dc4fb3bba58f85018fadf77898aee8b # v1.4.2
+
+      - uses: oxc-project/setup-node@d59b270414aa7d0eed947eed4eb5b0b8a675f01d # v1.4.0
+
+      - uses: oxc-project/setup-rust@3d6fb132fbe7cdcb66bf8ec193911c2945369d12 # v1.0.17
+        with:
+          restore-cache: true
+          cache-key: fork-editor-recovery
+          tools: just,cargo-shear@1.13.1,typos-cli
+          components: rustfmt,clippy
+
+      - name: Run release gates
+        run: env -u NO_COLOR just ready
+
+      - name: Check allocation snapshots
+        run: cargo allocs
+
+      - name: Verify generated files and snapshots are committed
+        run: git diff --exit-code
