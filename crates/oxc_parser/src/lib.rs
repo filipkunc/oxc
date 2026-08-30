@@ -101,7 +101,7 @@ use crate::{
     config::{
         LexerConfig, NoTokensParserConfig, ParserConfig, RuntimeParserConfig, TokensParserConfig,
     },
-    context::{Context, StatementContext},
+    context::{Context, RecoveryContext, StatementContext},
     diagnostics::ParserDiagnostic,
     error_handler::FatalError,
     lexer::Lexer,
@@ -171,6 +171,12 @@ pub struct ParserReturn<'a> {
     /// [`SemanticBuilder::with_check_syntax_error`](https://docs.rs/oxc_semantic/latest/oxc_semantic/struct.SemanticBuilder.html#method.with_check_syntax_error).
     pub diagnostics: Diagnostics,
 
+    /// Synthetic-token recovery sites produced only by [`ParseMode::Editor`].
+    ///
+    /// Expression recovery is represented directly by `MissingExpression` AST nodes. This list
+    /// records missing separators and closing delimiters that have no structural AST slot.
+    pub recoveries: Box<[RecoveryEvent]>,
+
     /// Irregular whitespaces for `Oxlint`
     pub irregular_whitespaces: Box<[Span]>,
 
@@ -191,6 +197,15 @@ pub struct ParserReturn<'a> {
 
     /// Whether the file is [flow](https://flow.org).
     pub is_flow_language: bool,
+}
+
+/// Owned metadata for an editor recovery that cannot be represented as an AST node.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct RecoveryEvent {
+    /// Stable recovery kind used by inspection tools and manifests.
+    pub kind: &'static str,
+    /// Zero-width insertion point for the missing token.
+    pub span: Span,
 }
 
 /// Controls whether the parser preserves an AST for selected incomplete editor input.
@@ -653,6 +668,10 @@ struct ParserImpl<'a, C: ParserConfig> {
     /// Parsing context
     ctx: Context,
 
+    /// Active list contexts for opt-in editor recovery.
+    recovery_ctx: RecoveryContext,
+    recoveries: Vec<RecoveryEvent>,
+
     /// Ast builder for creating AST nodes
     ast: AstBuilder<'a>,
 
@@ -690,6 +709,8 @@ impl<'a, C: ParserConfig> ParserImpl<'a, C> {
             prev_token_end: 0,
             state: ParserState::new(),
             ctx: Self::default_context(source_type, options),
+            recovery_ctx: RecoveryContext::default(),
+            recoveries: Vec::new(),
             ast: AstBuilder::new(allocator),
             module_record_builder: ModuleRecordBuilder::new(allocator, source_type),
             is_ts: source_type.is_typescript(),
@@ -779,6 +800,7 @@ impl<'a, C: ParserConfig> ParserImpl<'a, C> {
             program,
             module_record,
             diagnostics: errors,
+            recoveries: self.recoveries.into_boxed_slice(),
             irregular_whitespaces,
             tokens,
             panicked,

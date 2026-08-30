@@ -196,6 +196,18 @@ impl<'a> FormatWrite<'a> for AstNode<'a, MissingExpression> {
     fn write(&self, _f: &mut JsFormatter<'_, 'a>) {}
 }
 
+impl<'a> FormatWrite<'a> for AstNode<'a, MalformedExpression> {
+    fn write(&self, _f: &mut JsFormatter<'_, 'a>) {}
+}
+
+impl<'a> FormatWrite<'a> for AstNode<'a, MissingMemberExpression<'a>> {
+    fn write(&self, _f: &mut JsFormatter<'_, 'a>) {}
+}
+
+impl<'a> FormatWrite<'a> for AstNode<'a, MissingType> {
+    fn write(&self, _f: &mut JsFormatter<'_, 'a>) {}
+}
+
 impl<'a> FormatWrite<'a> for AstNode<'a, ArrayExpression<'a>> {
     fn write(&self, f: &mut JsFormatter<'_, 'a>) {
         FormatArrayExpression::new(self).fmt(f);

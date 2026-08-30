@@ -1375,7 +1375,9 @@ impl GenExpr for Expression<'_> {
             // V8 intrinsics (rare)
             Self::V8IntrinsicExpression(e) => e.print_expr(p, precedence, ctx),
             // Editor recovery placeholders do not correspond to source text.
-            Self::MissingExpression(_) => {}
+            Self::MissingExpression(_)
+            | Self::MalformedExpression(_)
+            | Self::MissingMemberExpression(_) => {}
         }
     }
 }
@@ -3312,6 +3314,7 @@ impl Gen for TSType<'_> {
             Self::JSDocNullableType(ty) => ty.print(p, ctx),
             Self::JSDocNonNullableType(ty) => ty.print(p, ctx),
             Self::JSDocUnknownType(_ty) => p.print_str("unknown"),
+            Self::MissingType(_) => {}
         }
     }
 }

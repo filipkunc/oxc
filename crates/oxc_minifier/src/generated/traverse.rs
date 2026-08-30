@@ -2548,6 +2548,41 @@ pub trait Traverse<'a> {
     }
 
     #[inline]
+    fn enter_malformed_expression(
+        &mut self,
+        node: &mut MalformedExpression,
+        ctx: &mut TraverseCtx<'a>,
+    ) {
+    }
+    #[inline]
+    fn exit_malformed_expression(
+        &mut self,
+        node: &mut MalformedExpression,
+        ctx: &mut TraverseCtx<'a>,
+    ) {
+    }
+
+    #[inline]
+    fn enter_missing_member_expression(
+        &mut self,
+        node: &mut MissingMemberExpression<'a>,
+        ctx: &mut TraverseCtx<'a>,
+    ) {
+    }
+    #[inline]
+    fn exit_missing_member_expression(
+        &mut self,
+        node: &mut MissingMemberExpression<'a>,
+        ctx: &mut TraverseCtx<'a>,
+    ) {
+    }
+
+    #[inline]
+    fn enter_missing_type(&mut self, node: &mut MissingType, ctx: &mut TraverseCtx<'a>) {}
+    #[inline]
+    fn exit_missing_type(&mut self, node: &mut MissingType, ctx: &mut TraverseCtx<'a>) {}
+
+    #[inline]
     fn enter_statements(
         &mut self,
         node: &mut ArenaVec<'a, Statement<'a>>,

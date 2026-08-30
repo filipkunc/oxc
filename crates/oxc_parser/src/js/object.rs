@@ -1,9 +1,10 @@
 use oxc_allocator::ArenaBox;
 use oxc_ast::ast::*;
+use oxc_data_structures::branch_hints::unlikely;
 use oxc_syntax::operator::AssignmentOperator;
 
 use crate::{
-    Context, ParserConfig as Config, ParserImpl, diagnostics,
+    Context, ParseMode, ParserConfig as Config, ParserImpl, RecoveryContext, diagnostics,
     lexer::Kind,
     modifiers::{ModifierKind, ModifierKinds, Modifiers},
 };
@@ -21,7 +22,8 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         let opening_span = self.cur_token().span();
         self.expect(Kind::LCurly);
         let (object_expression_properties, comma_start) = self.context_add(Context::In, |p| {
-            p.parse_delimited_list(
+            p.parse_recoverable_delimited_list(
+                RecoveryContext::ObjectProperties,
                 Kind::RCurly,
                 Kind::Comma,
                 opening_span,
@@ -36,7 +38,11 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         {
             self.state.trailing_commas.insert(start, self.end_span(comma_start));
         }
-        self.expect(Kind::RCurly);
+        self.expect_recoverable_closing(
+            Kind::RCurly,
+            opening_span,
+            RecoveryContext::ObjectProperties,
+        );
         ObjectExpression::boxed(self.end_span(start), object_expression_properties, self)
     }
 
@@ -146,7 +152,24 @@ impl<'a, C: Config> ParserImpl<'a, C> {
     pub(crate) fn parse_spread_element(&mut self) -> ArenaBox<'a, SpreadElement<'a>> {
         let start = self.cur_start();
         self.bump_any(); // advance `...`
-        let argument = self.parse_assignment_expression_or_higher();
+        let at_owned_boundary = match self.cur_kind() {
+            Kind::Comma => self.recovery_ctx.intersects(
+                RecoveryContext::ObjectProperties
+                    | RecoveryContext::ArrayElements
+                    | RecoveryContext::Arguments,
+            ),
+            Kind::RCurly => self.recovery_ctx.contains(RecoveryContext::ObjectProperties),
+            Kind::RBrack => self.recovery_ctx.contains(RecoveryContext::ArrayElements),
+            Kind::RParen => self.recovery_ctx.contains(RecoveryContext::Arguments),
+            _ => false,
+        };
+        let argument = if unlikely(self.options.mode == ParseMode::Editor) && at_owned_boundary {
+            let span = oxc_span::Span::empty(self.cur_start());
+            self.error(diagnostics::expression_expected(span));
+            Expression::MissingExpression(MissingExpression::boxed(span, self))
+        } else {
+            self.parse_assignment_expression_or_higher()
+        };
         SpreadElement::boxed(self.end_span(start), argument, self)
     }
 
@@ -159,7 +182,16 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         computed: bool,
     ) -> ArenaBox<'a, ObjectProperty<'a>> {
         self.expect(Kind::Colon);
-        let value = self.parse_assignment_expression_or_higher();
+        let value = if unlikely(self.options.mode == ParseMode::Editor)
+            && self.recovery_ctx.contains(RecoveryContext::ObjectProperties)
+            && matches!(self.cur_kind(), Kind::Comma | Kind::RCurly)
+        {
+            let span = oxc_span::Span::empty(self.cur_start());
+            self.error(diagnostics::expression_expected(span));
+            Expression::MissingExpression(MissingExpression::boxed(span, self))
+        } else {
+            self.parse_assignment_expression_or_higher()
+        };
         ObjectProperty::boxed(
             self.end_span(start),
             PropertyKind::Init,

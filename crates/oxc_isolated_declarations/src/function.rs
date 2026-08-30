@@ -296,7 +296,8 @@ fn undefined_presence(ts_type: &TSType<'_>) -> UndefinedPresence {
         | TSType::TSTypeReference(_)
         | TSType::JSDocNullableType(_)
         | TSType::JSDocNonNullableType(_)
-        | TSType::JSDocUnknownType(_) => UndefinedPresence::Unresolved,
+        | TSType::JSDocUnknownType(_)
+        | TSType::MissingType(_) => UndefinedPresence::Unresolved,
         TSType::TSIntersectionType(intersection) => intersection
             .types
             .iter()

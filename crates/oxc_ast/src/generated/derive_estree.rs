@@ -64,6 +64,10 @@ impl ESTree for Expression<'_> {
             Self::TSInstantiationExpression(it) => it.serialize(serializer),
             Self::V8IntrinsicExpression(it) => it.serialize(serializer),
             Self::MissingExpression(_) => unreachable!("This enum variant is skipped."),
+            Self::MalformedExpression(_) => unreachable!("This enum variant is skipped."),
+            Self::MissingMemberExpression(_) => {
+                unreachable!("This enum variant is skipped.")
+            }
             Self::ComputedMemberExpression(_)
             | Self::StaticMemberExpression(_)
             | Self::PrivateFieldExpression(_) => self.to_member_expression().serialize(serializer),
@@ -192,6 +196,8 @@ impl ESTree for ArrayExpressionElement<'_> {
             | Self::TSInstantiationExpression(_)
             | Self::V8IntrinsicExpression(_)
             | Self::MissingExpression(_)
+            | Self::MalformedExpression(_)
+            | Self::MissingMemberExpression(_)
             | Self::ComputedMemberExpression(_)
             | Self::StaticMemberExpression(_)
             | Self::PrivateFieldExpression(_) => self.to_expression().serialize(serializer),
@@ -287,6 +293,8 @@ impl ESTree for PropertyKey<'_> {
             | Self::TSInstantiationExpression(_)
             | Self::V8IntrinsicExpression(_)
             | Self::MissingExpression(_)
+            | Self::MalformedExpression(_)
+            | Self::MissingMemberExpression(_)
             | Self::ComputedMemberExpression(_)
             | Self::StaticMemberExpression(_)
             | Self::PrivateFieldExpression(_) => self.to_expression().serialize(serializer),
@@ -494,6 +502,8 @@ impl ESTree for Argument<'_> {
             | Self::TSInstantiationExpression(_)
             | Self::V8IntrinsicExpression(_)
             | Self::MissingExpression(_)
+            | Self::MalformedExpression(_)
+            | Self::MissingMemberExpression(_)
             | Self::ComputedMemberExpression(_)
             | Self::StaticMemberExpression(_)
             | Self::PrivateFieldExpression(_) => self.to_expression().serialize(serializer),
@@ -1047,6 +1057,8 @@ impl ESTree for ForStatementInit<'_> {
             | Self::TSInstantiationExpression(_)
             | Self::V8IntrinsicExpression(_)
             | Self::MissingExpression(_)
+            | Self::MalformedExpression(_)
+            | Self::MissingMemberExpression(_)
             | Self::ComputedMemberExpression(_)
             | Self::StaticMemberExpression(_)
             | Self::PrivateFieldExpression(_) => self.to_expression().serialize(serializer),
@@ -1425,6 +1437,8 @@ impl ESTree for ArrowFunctionBody<'_> {
             | Self::TSInstantiationExpression(_)
             | Self::V8IntrinsicExpression(_)
             | Self::MissingExpression(_)
+            | Self::MalformedExpression(_)
+            | Self::MissingMemberExpression(_)
             | Self::ComputedMemberExpression(_)
             | Self::StaticMemberExpression(_)
             | Self::PrivateFieldExpression(_) => self.to_expression().serialize(serializer),
@@ -1909,6 +1923,8 @@ impl ESTree for ExportDefaultDeclarationKind<'_> {
             | Self::TSInstantiationExpression(_)
             | Self::V8IntrinsicExpression(_)
             | Self::MissingExpression(_)
+            | Self::MalformedExpression(_)
+            | Self::MissingMemberExpression(_)
             | Self::ComputedMemberExpression(_)
             | Self::StaticMemberExpression(_)
             | Self::PrivateFieldExpression(_) => self.to_expression().serialize(serializer),
@@ -2209,6 +2225,8 @@ impl ESTree for JSXExpression<'_> {
             | Self::TSInstantiationExpression(_)
             | Self::V8IntrinsicExpression(_)
             | Self::MissingExpression(_)
+            | Self::MalformedExpression(_)
+            | Self::MissingMemberExpression(_)
             | Self::ComputedMemberExpression(_)
             | Self::StaticMemberExpression(_)
             | Self::PrivateFieldExpression(_) => self.to_expression().serialize(serializer),
@@ -2450,6 +2468,7 @@ impl ESTree for TSType<'_> {
             Self::JSDocNullableType(it) => it.serialize(serializer),
             Self::JSDocNonNullableType(it) => it.serialize(serializer),
             Self::JSDocUnknownType(it) => it.serialize(serializer),
+            Self::MissingType(_) => unreachable!("This enum variant is skipped."),
         }
     }
 }
@@ -2618,7 +2637,8 @@ impl ESTree for TSTupleElement<'_> {
             | Self::TSParenthesizedType(_)
             | Self::JSDocNullableType(_)
             | Self::JSDocNonNullableType(_)
-            | Self::JSDocUnknownType(_) => self.to_ts_type().serialize(serializer),
+            | Self::JSDocUnknownType(_)
+            | Self::MissingType(_) => self.to_ts_type().serialize(serializer),
         }
     }
 }

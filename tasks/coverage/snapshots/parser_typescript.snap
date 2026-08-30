@@ -9109,6 +9109,10 @@ Expect Syntax Error: tasks/coverage/typescript/tests/cases/conformance/types/wit
 
   × Expected `}` but found `EOF`
    ╭─[typescript/tests/cases/compiler/missingCloseBraceInObjectLiteral.ts:4:11]
+ 1 │ var foo = {
+   ·           ┬
+   ·           ╰── Opened here
+ 2 │     a: 'a',
  3 │     b: 'b',
  4 │     c: 'c'
    ╰────
@@ -9116,6 +9120,8 @@ Expect Syntax Error: tasks/coverage/typescript/tests/cases/conformance/types/wit
   × Expected `]` but found `EOF`
    ╭─[typescript/tests/cases/compiler/missingCloseBracketInArray.ts:1:48]
  1 │ var alphas:string[] = alphas = ["1","2","3","4"
+   ·                                ┬
+   ·                                ╰── Opened here
    ╰────
 
   × Expected `)` but found `{`
@@ -17120,8 +17126,9 @@ Expect Syntax Error: tasks/coverage/typescript/tests/cases/conformance/types/wit
    ╭─[typescript/tests/cases/conformance/classes/members/privateNames/privateNamesAndIndexedAccess.ts:7:28]
  6 │         // not supported yet, could support in future:
  7 │         const badForNow: C[#bar] = 3;   // Error
-   ·                            ──┬─
-   ·                              ╰── `]` expected
+   ·                           ┬──┬─
+   ·                           │  ╰── `]` expected
+   ·                           ╰── Opened here
  8 │         // will never use this syntax, already taken:
    ╰────
 
@@ -25881,6 +25888,8 @@ Expect Syntax Error: tasks/coverage/typescript/tests/cases/conformance/types/wit
   × Expected `)` but found `EOF`
    ╭─[typescript/tests/cases/conformance/parser/ecmascript5/ErrorRecovery/ParameterLists/parserErrorRecovery_ParameterList2.ts:2:2]
  1 │ function f(a, {
+   ·           ┬
+   ·           ╰── Opened here
  2 │ }
    ╰────
 
@@ -26083,6 +26092,8 @@ Expect Syntax Error: tasks/coverage/typescript/tests/cases/conformance/types/wit
    ╭─[typescript/tests/cases/conformance/parser/ecmascript5/ErrorRecovery/parserUnterminatedGeneric1.ts:2:54]
  1 │  interface IQService {
  2 │         all(promises: IPromise < any > []): IPromise<
+   ·                                                     ┬
+   ·                                                     ╰── Opened here
    ╰────
 
   × Expected a semicolon or an implicit semicolon after a statement, but found none

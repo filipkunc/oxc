@@ -4,7 +4,8 @@ use oxc_ecmascript::PropName;
 use oxc_span::{GetSpan, Span};
 
 use crate::{
-    Context, ParserConfig as Config, ParserImpl, StatementContext, diagnostics,
+    Context, ParseMode, ParserConfig as Config, ParserImpl, RecoveryContext, StatementContext,
+    diagnostics,
     lexer::Kind,
     modifiers::{ModifierKind, ModifierKinds, Modifiers},
 };
@@ -230,16 +231,21 @@ impl<'a, C: Config> ParserImpl<'a, C> {
 
     fn parse_class_body(&mut self) -> ArenaBox<'a, ClassBody<'a>> {
         let start = self.cur_start();
-        let class_elements = self.parse_normal_list_breakable(Kind::LCurly, Kind::RCurly, |p| {
-            // Skip empty class element `;`
-            if p.eat(Kind::Semicolon) {
-                while p.eat(Kind::Semicolon) {}
-                if p.at(Kind::RCurly) {
-                    return None;
+        let class_elements = self.parse_recoverable_normal_list_breakable(
+            RecoveryContext::ClassMembers,
+            Kind::LCurly,
+            Kind::RCurly,
+            |p| {
+                // Skip empty class element `;`
+                if p.eat(Kind::Semicolon) {
+                    while p.eat(Kind::Semicolon) {}
+                    if p.at(Kind::RCurly) {
+                        return None;
+                    }
                 }
-            }
-            Some(Self::parse_class_element(p))
-        });
+                Some(Self::parse_class_element(p))
+            },
+        );
         ClassBody::boxed(self.end_span(start), class_elements, self)
     }
 
@@ -708,8 +714,17 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         if cur_token.kind() == Kind::Semicolon {
             self.bump_any();
         } else if !self.can_insert_semicolon() {
-            let error = diagnostics::expect_token(";", cur_token.kind().to_str(), cur_token.span());
-            return self.fatal_error(error);
+            if self.options.mode == ParseMode::Editor
+                && self.recovery_ctx.contains(RecoveryContext::ClassMembers)
+            {
+                let span = Span::empty(self.cur_start());
+                self.record_recovery("MissingSemicolon", span);
+                self.error(diagnostics::typescript_expected_token(";", span));
+            } else {
+                let error =
+                    diagnostics::expect_token(";", cur_token.kind().to_str(), cur_token.span());
+                return self.fatal_error(error);
+            }
         }
 
         let r#abstract = modifiers.contains(ModifierKind::Abstract);

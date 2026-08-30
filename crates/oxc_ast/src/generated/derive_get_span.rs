@@ -64,6 +64,8 @@ impl GetSpan for Expression<'_> {
             Self::TSInstantiationExpression(it) => GetSpan::span(&**it),
             Self::V8IntrinsicExpression(it) => GetSpan::span(&**it),
             Self::MissingExpression(it) => GetSpan::span(&**it),
+            Self::MalformedExpression(it) => GetSpan::span(&**it),
+            Self::MissingMemberExpression(it) => GetSpan::span(&**it),
             Self::ComputedMemberExpression(it) => GetSpan::span(&**it),
             Self::StaticMemberExpression(it) => GetSpan::span(&**it),
             Self::PrivateFieldExpression(it) => GetSpan::span(&**it),
@@ -160,6 +162,8 @@ impl GetSpan for ArrayExpressionElement<'_> {
             Self::TSInstantiationExpression(it) => GetSpan::span(&**it),
             Self::V8IntrinsicExpression(it) => GetSpan::span(&**it),
             Self::MissingExpression(it) => GetSpan::span(&**it),
+            Self::MalformedExpression(it) => GetSpan::span(&**it),
+            Self::MissingMemberExpression(it) => GetSpan::span(&**it),
             Self::ComputedMemberExpression(it) => GetSpan::span(&**it),
             Self::StaticMemberExpression(it) => GetSpan::span(&**it),
             Self::PrivateFieldExpression(it) => GetSpan::span(&**it),
@@ -244,6 +248,8 @@ impl GetSpan for PropertyKey<'_> {
             Self::TSInstantiationExpression(it) => GetSpan::span(&**it),
             Self::V8IntrinsicExpression(it) => GetSpan::span(&**it),
             Self::MissingExpression(it) => GetSpan::span(&**it),
+            Self::MalformedExpression(it) => GetSpan::span(&**it),
+            Self::MissingMemberExpression(it) => GetSpan::span(&**it),
             Self::ComputedMemberExpression(it) => GetSpan::span(&**it),
             Self::StaticMemberExpression(it) => GetSpan::span(&**it),
             Self::PrivateFieldExpression(it) => GetSpan::span(&**it),
@@ -384,6 +390,8 @@ impl GetSpan for Argument<'_> {
             Self::TSInstantiationExpression(it) => GetSpan::span(&**it),
             Self::V8IntrinsicExpression(it) => GetSpan::span(&**it),
             Self::MissingExpression(it) => GetSpan::span(&**it),
+            Self::MalformedExpression(it) => GetSpan::span(&**it),
+            Self::MissingMemberExpression(it) => GetSpan::span(&**it),
             Self::ComputedMemberExpression(it) => GetSpan::span(&**it),
             Self::StaticMemberExpression(it) => GetSpan::span(&**it),
             Self::PrivateFieldExpression(it) => GetSpan::span(&**it),
@@ -780,6 +788,8 @@ impl GetSpan for ForStatementInit<'_> {
             Self::TSInstantiationExpression(it) => GetSpan::span(&**it),
             Self::V8IntrinsicExpression(it) => GetSpan::span(&**it),
             Self::MissingExpression(it) => GetSpan::span(&**it),
+            Self::MalformedExpression(it) => GetSpan::span(&**it),
+            Self::MissingMemberExpression(it) => GetSpan::span(&**it),
             Self::ComputedMemberExpression(it) => GetSpan::span(&**it),
             Self::StaticMemberExpression(it) => GetSpan::span(&**it),
             Self::PrivateFieldExpression(it) => GetSpan::span(&**it),
@@ -1030,6 +1040,8 @@ impl GetSpan for ArrowFunctionBody<'_> {
             Self::TSInstantiationExpression(it) => GetSpan::span(&**it),
             Self::V8IntrinsicExpression(it) => GetSpan::span(&**it),
             Self::MissingExpression(it) => GetSpan::span(&**it),
+            Self::MalformedExpression(it) => GetSpan::span(&**it),
+            Self::MissingMemberExpression(it) => GetSpan::span(&**it),
             Self::ComputedMemberExpression(it) => GetSpan::span(&**it),
             Self::StaticMemberExpression(it) => GetSpan::span(&**it),
             Self::PrivateFieldExpression(it) => GetSpan::span(&**it),
@@ -1285,6 +1297,8 @@ impl GetSpan for ExportDefaultDeclarationKind<'_> {
             Self::TSInstantiationExpression(it) => GetSpan::span(&**it),
             Self::V8IntrinsicExpression(it) => GetSpan::span(&**it),
             Self::MissingExpression(it) => GetSpan::span(&**it),
+            Self::MalformedExpression(it) => GetSpan::span(&**it),
+            Self::MissingMemberExpression(it) => GetSpan::span(&**it),
             Self::ComputedMemberExpression(it) => GetSpan::span(&**it),
             Self::StaticMemberExpression(it) => GetSpan::span(&**it),
             Self::PrivateFieldExpression(it) => GetSpan::span(&**it),
@@ -1482,6 +1496,8 @@ impl GetSpan for JSXExpression<'_> {
             Self::TSInstantiationExpression(it) => GetSpan::span(&**it),
             Self::V8IntrinsicExpression(it) => GetSpan::span(&**it),
             Self::MissingExpression(it) => GetSpan::span(&**it),
+            Self::MalformedExpression(it) => GetSpan::span(&**it),
+            Self::MissingMemberExpression(it) => GetSpan::span(&**it),
             Self::ComputedMemberExpression(it) => GetSpan::span(&**it),
             Self::StaticMemberExpression(it) => GetSpan::span(&**it),
             Self::PrivateFieldExpression(it) => GetSpan::span(&**it),
@@ -1678,6 +1694,7 @@ impl GetSpan for TSType<'_> {
             Self::JSDocNullableType(it) => GetSpan::span(&**it),
             Self::JSDocNonNullableType(it) => GetSpan::span(&**it),
             Self::JSDocUnknownType(it) => GetSpan::span(&**it),
+            Self::MissingType(it) => GetSpan::span(&**it),
         }
     }
 }
@@ -1801,6 +1818,7 @@ impl GetSpan for TSTupleElement<'_> {
             Self::JSDocNullableType(it) => GetSpan::span(&**it),
             Self::JSDocNonNullableType(it) => GetSpan::span(&**it),
             Self::JSDocUnknownType(it) => GetSpan::span(&**it),
+            Self::MissingType(it) => GetSpan::span(&**it),
         }
     }
 }
@@ -2282,6 +2300,27 @@ impl GetSpan for Comment {
 }
 
 impl GetSpan for MissingExpression {
+    #[inline]
+    fn span(&self) -> Span {
+        self.span
+    }
+}
+
+impl GetSpan for MalformedExpression {
+    #[inline]
+    fn span(&self) -> Span {
+        self.span
+    }
+}
+
+impl GetSpan for MissingMemberExpression<'_> {
+    #[inline]
+    fn span(&self) -> Span {
+        self.span
+    }
+}
+
+impl GetSpan for MissingType {
     #[inline]
     fn span(&self) -> Span {
         self.span

@@ -325,6 +325,7 @@ pub(crate) enum AncestorType {
     TSInstantiationExpressionTypeArguments = 301,
     JSDocNullableTypeTypeAnnotation = 302,
     JSDocNonNullableTypeTypeAnnotation = 303,
+    MissingMemberExpressionObject = 304,
 }
 
 /// Ancestor type used in AST traversal.
@@ -914,6 +915,8 @@ pub enum Ancestor<'a, 't> {
         AncestorType::JSDocNullableTypeTypeAnnotation as u16,
     JSDocNonNullableTypeTypeAnnotation(JSDocNonNullableTypeWithoutTypeAnnotation<'a, 't>) =
         AncestorType::JSDocNonNullableTypeTypeAnnotation as u16,
+    MissingMemberExpressionObject(MissingMemberExpressionWithoutObject<'a, 't>) =
+        AncestorType::MissingMemberExpressionObject as u16,
 }
 
 impl<'a, 't> Ancestor<'a, 't> {
@@ -1926,6 +1929,11 @@ impl<'a, 't> Ancestor<'a, 't> {
     }
 
     #[inline]
+    pub fn is_missing_member_expression(self) -> bool {
+        matches!(self, Self::MissingMemberExpressionObject(_))
+    }
+
+    #[inline]
     pub fn is_parent_of_statement(self) -> bool {
         matches!(
             self,
@@ -2033,6 +2041,7 @@ impl<'a, 't> Ancestor<'a, 't> {
                 | Self::DecoratorExpression(_)
                 | Self::TSExportAssignmentExpression(_)
                 | Self::TSInstantiationExpressionExpression(_)
+                | Self::MissingMemberExpressionObject(_)
         )
     }
 
@@ -2581,6 +2590,7 @@ impl<'a, 't> GetAddress for Ancestor<'a, 't> {
             Self::TSInstantiationExpressionTypeArguments(a) => a.address(),
             Self::JSDocNullableTypeTypeAnnotation(a) => a.address(),
             Self::JSDocNonNullableTypeTypeAnnotation(a) => a.address(),
+            Self::MissingMemberExpressionObject(a) => a.address(),
         }
     }
 }
@@ -18500,6 +18510,63 @@ impl<'a, 't> JSDocNonNullableTypeWithoutTypeAnnotation<'a, 't> {
 }
 
 impl<'a, 't> GetAddress for JSDocNonNullableTypeWithoutTypeAnnotation<'a, 't> {
+    #[inline]
+    fn address(&self) -> Address {
+        unsafe { Address::from_ptr(self.0) }
+    }
+}
+
+pub(crate) const OFFSET_MISSING_MEMBER_EXPRESSION_NODE_ID: usize =
+    offset_of!(MissingMemberExpression, node_id);
+pub(crate) const OFFSET_MISSING_MEMBER_EXPRESSION_SPAN: usize =
+    offset_of!(MissingMemberExpression, span);
+pub(crate) const OFFSET_MISSING_MEMBER_EXPRESSION_OBJECT: usize =
+    offset_of!(MissingMemberExpression, object);
+pub(crate) const OFFSET_MISSING_MEMBER_EXPRESSION_MISSING_PROPERTY_SPAN: usize =
+    offset_of!(MissingMemberExpression, missing_property_span);
+pub(crate) const OFFSET_MISSING_MEMBER_EXPRESSION_OPTIONAL: usize =
+    offset_of!(MissingMemberExpression, optional);
+
+#[repr(transparent)]
+#[derive(Clone, Copy, Debug)]
+pub struct MissingMemberExpressionWithoutObject<'a, 't>(
+    pub(crate) *const MissingMemberExpression<'a>,
+    pub(crate) PhantomData<&'t ()>,
+);
+
+impl<'a, 't> MissingMemberExpressionWithoutObject<'a, 't> {
+    #[inline]
+    pub fn node_id(self) -> &'t Cell<NodeId> {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_MISSING_MEMBER_EXPRESSION_NODE_ID)
+                as *const Cell<NodeId>)
+        }
+    }
+
+    #[inline]
+    pub fn span(self) -> &'t Span {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_MISSING_MEMBER_EXPRESSION_SPAN) as *const Span)
+        }
+    }
+
+    #[inline]
+    pub fn missing_property_span(self) -> &'t Span {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_MISSING_MEMBER_EXPRESSION_MISSING_PROPERTY_SPAN)
+                as *const Span)
+        }
+    }
+
+    #[inline]
+    pub fn optional(self) -> &'t bool {
+        unsafe {
+            &*((self.0 as *const u8).add(OFFSET_MISSING_MEMBER_EXPRESSION_OPTIONAL) as *const bool)
+        }
+    }
+}
+
+impl<'a, 't> GetAddress for MissingMemberExpressionWithoutObject<'a, 't> {
     #[inline]
     fn address(&self) -> Address {
         unsafe { Address::from_ptr(self.0) }

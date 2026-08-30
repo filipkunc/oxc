@@ -1,10 +1,11 @@
 use oxc_allocator::{ArenaBox, ArenaVec, Dummy, GetAllocator};
 use oxc_ast::ast::*;
-use oxc_span::GetSpan;
+use oxc_data_structures::branch_hints::unlikely;
+use oxc_span::{GetSpan, Span};
 use oxc_syntax::operator::UnaryOperator;
 
 use crate::{
-    Context, ParserConfig as Config, ParserImpl, diagnostics,
+    Context, ParseMode, ParserConfig as Config, ParserImpl, RecoveryContext, diagnostics,
     lexer::Kind,
     modifiers::{ModifierKind, ModifierKinds, Modifiers},
 };
@@ -387,10 +388,15 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                     );
                 }
                 Kind::LBrack => {
+                    let opening_span = self.cur_token().span();
                     self.bump_any();
                     if self.is_start_of_type(/* in_start_of_parameter */ false) {
                         let index_type = self.parse_ts_type();
-                        self.expect(Kind::RBrack);
+                        self.expect_recoverable_closing(
+                            Kind::RBrack,
+                            opening_span,
+                            RecoveryContext::ArrayTypeSuffix,
+                        );
                         ty = TSType::new_ts_indexed_access_type(
                             self.end_span(start),
                             ty,
@@ -398,7 +404,11 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                             self,
                         );
                     } else {
-                        self.expect(Kind::RBrack);
+                        self.expect_recoverable_closing(
+                            Kind::RBrack,
+                            opening_span,
+                            RecoveryContext::ArrayTypeSuffix,
+                        );
                         ty = TSType::new_ts_array_type(self.end_span(start), ty, self);
                     }
                 }
@@ -409,6 +419,28 @@ impl<'a, C: Config> ParserImpl<'a, C> {
     }
 
     fn parse_non_array_type(&mut self) -> TSType<'a> {
+        if unlikely(
+            self.options.mode == ParseMode::Editor
+                && matches!(
+                    self.cur_kind(),
+                    Kind::Eq
+                        | Kind::Semicolon
+                        | Kind::Comma
+                        | Kind::RCurly
+                        | Kind::RBrack
+                        | Kind::RParen
+                        | Kind::RAngle
+                        | Kind::Arrow
+                        | Kind::Pipe
+                        | Kind::Amp
+                        | Kind::Colon
+                        | Kind::Eof
+                ),
+        ) {
+            let span = Span::empty(self.cur_start());
+            self.error(diagnostics::type_expected(span));
+            return TSType::MissingType(MissingType::boxed(span, self));
+        }
         match self.cur_kind() {
             Kind::Any
             | Kind::Unknown
@@ -891,13 +923,18 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             let start = self.cur_start();
             let opening_span = self.cur_token().span();
             self.expect(Kind::LAngle);
-            let (params, _) = self.parse_delimited_list(
+            let (params, _) = self.parse_recoverable_delimited_list(
+                RecoveryContext::TypeArguments,
                 Kind::RAngle,
                 Kind::Comma,
                 opening_span,
                 Self::parse_ts_type,
             );
-            self.expect(Kind::RAngle);
+            self.expect_recoverable_closing(
+                Kind::RAngle,
+                opening_span,
+                RecoveryContext::TypeArguments,
+            );
             let span = self.end_span(start);
             if params.is_empty() {
                 self.error(diagnostics::ts_empty_type_argument_list(span));
@@ -1101,9 +1138,14 @@ impl<'a, C: Config> ParserImpl<'a, C> {
 
     fn parse_parenthesized_type(&mut self) -> TSType<'a> {
         let start = self.cur_start();
+        let opening_span = self.cur_token().span();
         self.bump_any(); // bump `(`
         let ty = self.parse_ts_type();
-        self.expect(Kind::RParen);
+        self.expect_recoverable_closing(
+            Kind::RParen,
+            opening_span,
+            RecoveryContext::ParenthesizedType,
+        );
         if self.options.preserve_parens {
             TSType::new_ts_parenthesized_type(self.end_span(start), ty, self)
         } else {
@@ -1594,7 +1636,19 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             return;
         }
         // Didn't have a comma.  We must have a (possible ASI) semicolon.
-        self.bump(Kind::Semicolon);
+        if self.eat(Kind::Semicolon)
+            || self.cur_token().is_on_new_line()
+            || matches!(self.cur_kind(), Kind::RCurly | Kind::Eof | Kind::Undetermined)
+        {
+            return;
+        }
+        if self.options.mode == ParseMode::Editor
+            && self.recovery_ctx.contains(RecoveryContext::TypeMembers)
+        {
+            let span = Span::empty(self.cur_start());
+            self.record_recovery("MissingSemicolon", span);
+            self.error(diagnostics::typescript_expected_token(";", span));
+        }
     }
 
     fn parse_ts_index_signature_name(&mut self) -> TSIndexSignatureName<'a> {
@@ -1649,7 +1703,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         self.cur_kind().is_binary_operator()
     }
 
-    fn is_start_of_expression(&mut self) -> bool {
+    pub(crate) fn is_start_of_expression(&mut self) -> bool {
         if self.is_start_of_left_hand_side_expression() {
             return true;
         }

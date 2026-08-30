@@ -466,6 +466,26 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, Expression<'a>> {
                     })
                     .fmt(f);
             }
+            Expression::MalformedExpression(inner) => {
+                allocator
+                    .alloc(AstNode::<MalformedExpression> {
+                        inner,
+                        parent,
+                        allocator,
+                        following_span_start: self.following_span_start,
+                    })
+                    .fmt(f);
+            }
+            Expression::MissingMemberExpression(inner) => {
+                allocator
+                    .alloc(AstNode::<MissingMemberExpression> {
+                        inner,
+                        parent,
+                        allocator,
+                        following_span_start: self.following_span_start,
+                    })
+                    .fmt(f);
+            }
             it @ match_member_expression!(Expression) => {
                 let inner = it.to_member_expression();
                 allocator
@@ -4547,6 +4567,16 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, TSType<'a>> {
                     })
                     .fmt(f);
             }
+            TSType::MissingType(inner) => {
+                allocator
+                    .alloc(AstNode::<MissingType> {
+                        inner,
+                        parent,
+                        allocator,
+                        following_span_start: self.following_span_start,
+                    })
+                    .fmt(f);
+            }
         }
     }
 }
@@ -5909,6 +5939,69 @@ impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, MissingExpression> {
         }
         if needs_parentheses {
             ")".fmt(f);
+        }
+        self.format_trailing_comments(f);
+    }
+}
+
+impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, MalformedExpression> {
+    fn fmt(&self, f: &mut JsFormatter<'_, 'a>) {
+        let is_suppressed = f.comments().is_suppressed(self.suppressed_span().start);
+        if !is_suppressed && format_type_cast_comment_node(self, false, f) {
+            return;
+        }
+        let needs_parentheses = self.needs_parentheses(f);
+        format_leading_comments_and_open_paren(
+            self.span(),
+            self.leading_comments_start(),
+            needs_parentheses,
+            f,
+        );
+        if is_suppressed {
+            self.write_suppressed(f);
+        } else {
+            self.write(f);
+        }
+        if needs_parentheses {
+            ")".fmt(f);
+        }
+        self.format_trailing_comments(f);
+    }
+}
+
+impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, MissingMemberExpression<'a>> {
+    fn fmt(&self, f: &mut JsFormatter<'_, 'a>) {
+        let is_suppressed = f.comments().is_suppressed(self.suppressed_span().start);
+        if !is_suppressed && format_type_cast_comment_node(self, false, f) {
+            return;
+        }
+        let needs_parentheses = self.needs_parentheses(f);
+        format_leading_comments_and_open_paren(
+            self.span(),
+            self.leading_comments_start(),
+            needs_parentheses,
+            f,
+        );
+        if is_suppressed {
+            self.write_suppressed(f);
+        } else {
+            self.write(f);
+        }
+        if needs_parentheses {
+            ")".fmt(f);
+        }
+        self.format_trailing_comments(f);
+    }
+}
+
+impl<'a> Format<'a, JsFormatContext<'a>> for AstNode<'a, MissingType> {
+    fn fmt(&self, f: &mut JsFormatter<'_, 'a>) {
+        let is_suppressed = f.comments().is_suppressed(self.suppressed_span().start);
+        self.format_leading_comments(f);
+        if is_suppressed {
+            self.write_suppressed(f);
+        } else {
+            self.write(f);
         }
         self.format_trailing_comments(f);
     }

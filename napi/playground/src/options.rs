@@ -49,6 +49,17 @@ pub struct OxcParserOptions {
     pub semantic_errors: bool,
 }
 
+/// Options for the parse-only editor-recovery inspection endpoint.
+#[napi(object)]
+#[derive(Default, Clone)]
+pub struct OxcRecoveryInspectionOptions {
+    pub extension: String,
+    /// `normal` or `editor`.
+    pub mode: String,
+    /// Include safe semantic binding/reference summaries.
+    pub semantic: bool,
+}
+
 #[napi(object)]
 #[derive(Default, Clone)]
 pub struct OxcLinterOptions {

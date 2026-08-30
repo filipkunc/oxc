@@ -2,8 +2,28 @@ use oxc_allocator::Allocator;
 use oxc_ast_visit::utf8_to_utf16::Utf8ToUtf16;
 use oxc_benchmark::{BenchmarkId, Criterion, black_box, criterion_group, criterion_main};
 use oxc_estree_tokens::{ESTreeTokenOptionsJS, to_estree_tokens_json};
-use oxc_parser::{ParseOptions, Parser, ParserReturn, config::RuntimeParserConfig};
+use oxc_parser::{ParseMode, ParseOptions, Parser, ParserReturn, config::RuntimeParserConfig};
+use oxc_span::SourceType;
 use oxc_tasks_common::TestFiles;
+
+const EDITOR_VALID_SOURCE: &str = r"
+interface Box { value: number; label?: string }
+declare const box: Box;
+function read(input: Box, fallback: number): number {
+    return input.value ?? fallback;
+}
+const result: number = read(box, 0);
+";
+
+const EDITOR_INCOMPLETE_SOURCE: &str = r"
+interface Box { value: number label: string }
+declare const box: Box;
+box.;
+function read(, fallback: number): number {
+    return box.value +;
+}
+const result: number = read(box,
+";
 
 fn bench_parser(criterion: &mut Criterion) {
     let mut group = criterion.benchmark_group("parser");
@@ -26,6 +46,36 @@ fn bench_parser(criterion: &mut Criterion) {
                         ..ParseOptions::default()
                     })
                     .parse();
+                allocator.reset();
+            });
+        });
+    }
+
+    group.finish();
+}
+
+fn bench_editor_recovery(criterion: &mut Criterion) {
+    let mut group = criterion.benchmark_group("parser_editor_recovery");
+    let source_type = SourceType::ts();
+
+    for (name, source_text, mode) in [
+        ("normal_valid", EDITOR_VALID_SOURCE, ParseMode::Normal),
+        ("editor_valid", EDITOR_VALID_SOURCE, ParseMode::Editor),
+        ("editor_incomplete", EDITOR_INCOMPLETE_SOURCE, ParseMode::Editor),
+    ] {
+        group.bench_function(name, |b| {
+            let mut allocator = Allocator::default();
+
+            b.iter(|| {
+                black_box(
+                    Parser::new(&allocator, source_text, source_type)
+                        .with_options(ParseOptions {
+                            parse_regular_expression: true,
+                            mode,
+                            ..ParseOptions::default()
+                        })
+                        .parse(),
+                );
                 allocator.reset();
             });
         });
@@ -122,5 +172,5 @@ fn bench_estree_tokens(criterion: &mut Criterion) {
     group.finish();
 }
 
-criterion_group!(parser, bench_parser, bench_estree, bench_estree_tokens);
+criterion_group!(parser, bench_parser, bench_editor_recovery, bench_estree, bench_estree_tokens);
 criterion_main!(parser);

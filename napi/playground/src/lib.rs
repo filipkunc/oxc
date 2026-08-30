@@ -46,6 +46,7 @@ use oxc_transformer_plugins::{
 };
 
 mod options;
+mod recovery;
 pub use options::*;
 
 #[derive(Default)]
@@ -84,6 +85,32 @@ impl Oxc {
     #[napi]
     pub fn get_comments(&self) -> Vec<Comment> {
         self.comments.clone()
+    }
+
+    /// Parse incomplete input without invoking batch-only transforms, formatting, linting,
+    /// minification, code generation, or ESTree serialization.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for an unsupported extension or mode, or when the owned inspection
+    /// response cannot be serialized.
+    #[napi]
+    #[allow(
+        clippy::allow_attributes,
+        clippy::needless_pass_by_value,
+        clippy::unused_self,
+        reason = "NAPI exposes inspection as an instance method and owns JavaScript arguments"
+    )]
+    pub fn inspect_recovery(
+        &self,
+        source_text: String,
+        options: OxcRecoveryInspectionOptions,
+    ) -> napi::Result<String> {
+        let inspection =
+            recovery::inspect_recovery(&source_text, &options).map_err(napi::Error::from_reason)?;
+        serde_json::to_string_pretty(&inspection).map_err(|error| {
+            napi::Error::from_reason(format!("failed to serialize recovery inspection: {error}"))
+        })
     }
 
     /// # Errors

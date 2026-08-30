@@ -174,6 +174,18 @@ pub enum Expression<'a> {
     #[estree(skip)]
     MissingExpression(Box<'a, MissingExpression>) = 41,
 
+    /// Source-backed token preserved when editor recovery cannot form an expression.
+    ///
+    /// This is an internal Oxc node and is intentionally not part of ESTree output.
+    #[estree(skip)]
+    MalformedExpression(Box<'a, MalformedExpression>) = 42,
+
+    /// Member access whose property identifier is missing during editor recovery.
+    ///
+    /// This is an internal Oxc node and is intentionally not part of ESTree output.
+    #[estree(skip)]
+    MissingMemberExpression(Box<'a, MissingMemberExpression<'a>>) = 43,
+
     // `MemberExpression` variants added here by `#[ast]` macro
     INHERIT(MemberExpression<'a>),
 }

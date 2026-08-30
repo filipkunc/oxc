@@ -43,6 +43,16 @@ export declare class Oxc {
   getDiagnostics(): Array<OxcError>
   getComments(): Array<Comment>
   /**
+   * Parse incomplete input without invoking batch-only transforms, formatting, linting,
+   * minification, code generation, or ESTree serialization.
+   *
+   * # Errors
+   *
+   * Returns an error for an unsupported extension or mode, or when the owned inspection
+   * response cannot be serialized.
+   */
+  inspectRecovery(sourceText: string, options: OxcRecoveryInspectionOptions): string
+  /**
    * # Errors
    * Serde serialization error
    */
@@ -159,6 +169,15 @@ export interface OxcParserOptions {
   preserveParens: boolean
   allowV8Intrinsics: boolean
   semanticErrors: boolean
+}
+
+/** Options for the parse-only editor-recovery inspection endpoint. */
+export interface OxcRecoveryInspectionOptions {
+  extension: string
+  /** `normal` or `editor`. */
+  mode: string
+  /** Include safe semantic binding/reference summaries. */
+  semantic: boolean
 }
 
 export interface OxcRunOptions {

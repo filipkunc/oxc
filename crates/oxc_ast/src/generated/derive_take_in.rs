@@ -488,3 +488,9 @@ impl<'a> TakeIn<'a> for JSDocNonNullableType<'a> {}
 impl<'a> TakeIn<'a> for JSDocUnknownType {}
 
 impl<'a> TakeIn<'a> for MissingExpression {}
+
+impl<'a> TakeIn<'a> for MalformedExpression {}
+
+impl<'a> TakeIn<'a> for MissingMemberExpression<'a> {}
+
+impl<'a> TakeIn<'a> for MissingType {}

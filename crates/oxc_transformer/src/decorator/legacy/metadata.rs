@@ -418,7 +418,7 @@ impl<'a> LegacyDecoratorMetadata<'a> {
             | TSType::TSThisType(_) | TSType::TSImportType(_) | TSType::TSTypeOperatorType(_)
             // Not allowed to be used in the start of type annotations, fallback to `Object`
             | TSType::TSInferType(_) | TSType::TSIntrinsicKeyword(_) | TSType::TSNamedTupleMember(_)
-            | TSType::JSDocUnknownType(_) => Self::global_object(ctx),
+            | TSType::JSDocUnknownType(_) | TSType::MissingType(_) => Self::global_object(ctx),
         }
     }
 

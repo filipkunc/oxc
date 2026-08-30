@@ -5514,6 +5514,8 @@ fn expression_type_name(expr: &oxc::Expression) -> &'static str {
         oxc::Expression::TSInstantiationExpression(_) => "TSInstantiationExpression",
         oxc::Expression::V8IntrinsicExpression(_) => "V8IntrinsicExpression",
         oxc::Expression::MissingExpression(_) => "MissingExpression",
+        oxc::Expression::MalformedExpression(_) => "MalformedExpression",
+        oxc::Expression::MissingMemberExpression(_) => "MissingMemberExpression",
     }
 }
 

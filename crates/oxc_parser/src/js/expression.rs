@@ -1,6 +1,7 @@
 use cow_utils::CowUtils;
 use oxc_allocator::{ArenaBox, ArenaVec, GetAllocator, ReplaceWith};
 use oxc_ast::ast::*;
+use oxc_data_structures::branch_hints::unlikely;
 #[cfg(feature = "regular_expression")]
 use oxc_regular_expression::ast::Pattern;
 use oxc_span::{GetSpan, Span};
@@ -18,7 +19,7 @@ use super::{
     },
 };
 use crate::{
-    Context, ParserConfig as Config, ParserImpl, diagnostics,
+    Context, ParseMode, ParserConfig as Config, ParserImpl, RecoveryContext, diagnostics,
     lexer::{Kind, parse_big_int, parse_float, parse_int},
     modifiers::Modifiers,
 };
@@ -264,8 +265,32 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             Kind::At => self.parse_decorated_expression(),
             // Literal, RegularExpressionLiteral
             kind if kind.is_literal() => self.parse_literal_expression(),
+            Kind::Colon | Kind::Dot3
+                if unlikely(self.can_recover_source_backed_malformed_expression()) =>
+            {
+                self.parse_malformed_expression()
+            }
             _ => self.parse_identifier_expression(),
         }
+    }
+
+    /// Preserve an unexpected source token in an expression slot so editor-mode consumers can
+    /// suppress diagnostics derived from that token while checking independent syntax.
+    #[cold]
+    fn parse_malformed_expression(&mut self) -> Expression<'a> {
+        let span = self.cur_token().span();
+        self.error(diagnostics::expression_expected(span));
+        self.bump_any();
+        Expression::MalformedExpression(MalformedExpression::boxed(span, self))
+    }
+
+    fn can_recover_source_backed_malformed_expression(&self) -> bool {
+        self.options.mode == ParseMode::Editor
+            && !self.recovery_ctx.intersects(
+                RecoveryContext::ObjectProperties
+                    | RecoveryContext::ArrayElements
+                    | RecoveryContext::Arguments,
+            )
     }
 
     fn parse_parenthesized_expression(&mut self) -> Expression<'a> {
@@ -515,7 +540,8 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         let opening_span = self.cur_token().span();
         self.expect(Kind::LBrack);
         let (elements, comma_start) = self.context_add(Context::In, |p| {
-            p.parse_delimited_list(
+            p.parse_recoverable_delimited_list(
+                RecoveryContext::ArrayElements,
                 Kind::RBrack,
                 Kind::Comma,
                 opening_span,
@@ -527,7 +553,7 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         {
             self.state.trailing_commas.insert(start, self.end_span(comma_start));
         }
-        self.expect(Kind::RBrack);
+        self.expect_recoverable_closing(Kind::RBrack, opening_span, RecoveryContext::ArrayElements);
         Expression::new_array_expression(self.end_span(start), elements, self)
     }
 
@@ -871,7 +897,13 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                 Kind::Dot => {
                     self.bump_any();
                     self.error_if_unparenthesized_instantiation_expression(&lhs, lhs_start);
-                    lhs = self.parse_static_member_expression(lhs_start, lhs, false);
+                    lhs = if self.at_missing_expression_operand_boundary()
+                        && unlikely(self.options.mode == ParseMode::Editor)
+                    {
+                        self.parse_missing_member_expression(lhs_start, lhs, false)
+                    } else {
+                        self.parse_static_member_expression(lhs_start, lhs, false)
+                    };
                 }
                 Kind::QuestionDot if allow_optional_chain => {
                     // Fast check to avoid checkpoint/rewind in common cases
@@ -896,10 +928,16 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                             lhs =
                                 self.parse_tagged_template_rest(lhs_start, lhs, *in_optional_chain);
                         }
+                    } else if self.options.mode == ParseMode::Editor
+                        && self.is_missing_expression_operand_boundary(next_kind)
+                    {
+                        self.bump_any();
+                        *in_optional_chain = true;
+                        lhs = self.parse_missing_member_expression(lhs_start, lhs, true);
                     } else {
                         // This is not a valid optional chain pattern, don't consume ?.
-                        // Should be a cold branch here, as most real-world optional chaining will look like
-                        // `?.something` or `?.[expr]`
+                        // Should be a cold branch here, as most real-world optional chaining
+                        // will look like `?.something` or `?.[expr]`.
                         return lhs;
                     }
                 }
@@ -983,6 +1021,24 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         })
     }
 
+    #[cold]
+    fn parse_missing_member_expression(
+        &mut self,
+        lhs_start: u32,
+        lhs: Expression<'a>,
+        optional: bool,
+    ) -> Expression<'a> {
+        let missing_property_span = Span::empty(self.cur_start());
+        self.error(diagnostics::typescript_identifier_expected(missing_property_span));
+        Expression::MissingMemberExpression(MissingMemberExpression::boxed(
+            self.end_span(lhs_start),
+            lhs,
+            missing_property_span,
+            optional,
+            self,
+        ))
+    }
+
     /// Section 13.3 `MemberExpression`
     /// `MemberExpression`[Yield, Await] :
     ///   `MemberExpression`[?Yield, ?Await] [ Expression[+In, ?Yield, ?Await] ]
@@ -1055,14 +1111,15 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             // ArgumentList[Yield, Await] :
             //   AssignmentExpression[+In, ?Yield, ?Await]
             let (call_arguments, _) = self.context_add(Context::In, |p| {
-                p.parse_delimited_list(
+                p.parse_recoverable_delimited_list(
+                    RecoveryContext::Arguments,
                     Kind::RParen,
                     Kind::Comma,
                     opening_span,
                     Self::parse_call_argument,
                 )
             });
-            self.expect(Kind::RParen);
+            self.expect_recoverable_closing(Kind::RParen, opening_span, RecoveryContext::Arguments);
             call_arguments
         } else {
             ArenaVec::new_in(self)
@@ -1174,14 +1231,15 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         let opening_span = self.cur_token().span();
         self.expect(Kind::LParen);
         let (call_arguments, _) = self.context(Context::In, Context::Decorator, |p| {
-            p.parse_delimited_list(
+            p.parse_recoverable_delimited_list(
+                RecoveryContext::Arguments,
                 Kind::RParen,
                 Kind::Comma,
                 opening_span,
                 Self::parse_call_argument,
             )
         });
-        self.expect(Kind::RParen);
+        self.expect_recoverable_closing(Kind::RParen, opening_span, RecoveryContext::Arguments);
         Expression::new_call_expression(
             self.end_span(lhs_start),
             lhs,
@@ -1195,6 +1253,13 @@ impl<'a, C: Config> ParserImpl<'a, C> {
     fn parse_call_argument(&mut self) -> Argument<'a> {
         if self.at(Kind::Dot3) {
             Argument::SpreadElement(self.parse_spread_element())
+        } else if unlikely(self.options.mode == ParseMode::Editor)
+            && self.recovery_ctx.contains(RecoveryContext::Arguments)
+            && self.at(Kind::Comma)
+        {
+            let span = Span::empty(self.cur_start());
+            self.error(diagnostics::argument_expression_expected(span));
+            Argument::MissingExpression(MissingExpression::boxed(span, self))
         } else {
             Argument::from(self.parse_assignment_expression_or_higher())
         }
@@ -1390,7 +1455,15 @@ impl<'a, C: Config> ParserImpl<'a, C> {
 
             self.bump_any(); // bump operator
             let rhs_parenthesized = self.at(Kind::LParen);
-            let rhs = self.parse_binary_expression_or_higher(left_precedence);
+            let rhs = if self.at_missing_expression_operand_boundary()
+                && unlikely(self.options.mode == ParseMode::Editor)
+            {
+                let span = Span::empty(self.cur_start());
+                self.error(diagnostics::expression_expected(span));
+                Expression::MissingExpression(MissingExpression::boxed(span, self))
+            } else {
+                self.parse_binary_expression_or_higher(left_precedence)
+            };
 
             lhs = if kind.is_logical_operator() {
                 let span = self.end_span(lhs_start);
@@ -1632,9 +1705,41 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         }
         let left = AssignmentTarget::cover(lhs, self);
         self.bump_any();
-        let right =
-            self.parse_assignment_expression_or_higher_impl(allow_return_type_in_arrow_function);
+        let right = if self.at_missing_expression_operand_boundary()
+            && unlikely(self.options.mode == ParseMode::Editor)
+        {
+            let span = Span::empty(self.cur_start());
+            self.error(diagnostics::expression_expected(span));
+            Expression::MissingExpression(MissingExpression::boxed(span, self))
+        } else {
+            self.parse_assignment_expression_or_higher_impl(allow_return_type_in_arrow_function)
+        };
         Expression::new_assignment_expression(self.end_span(start), operator, left, right, self)
+    }
+
+    /// Whether the current token belongs to an active enclosing list rather than a missing
+    /// assignment or binary operand. The boundary remains unconsumed for that owner.
+    fn at_missing_expression_operand_boundary(&self) -> bool {
+        self.is_missing_expression_operand_boundary(self.cur_kind())
+    }
+
+    fn is_missing_expression_operand_boundary(&self, kind: Kind) -> bool {
+        let statement_context = self
+            .recovery_ctx
+            .intersects(RecoveryContext::SourceElements | RecoveryContext::BlockStatements);
+        let object_context = self.recovery_ctx.contains(RecoveryContext::ObjectProperties);
+        let array_context = self.recovery_ctx.contains(RecoveryContext::ArrayElements);
+        let argument_context = self.recovery_ctx.contains(RecoveryContext::Arguments);
+        match kind {
+            Kind::Semicolon | Kind::Eof => statement_context,
+            Kind::Comma => object_context || array_context || argument_context,
+            Kind::RBrack => array_context,
+            Kind::RParen => argument_context,
+            Kind::RCurly => {
+                object_context || self.recovery_ctx.contains(RecoveryContext::BlockStatements)
+            }
+            _ => false,
+        }
     }
 
     /// Section 13.16 Sequence Expression

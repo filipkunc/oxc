@@ -394,3 +394,9 @@ impl UnstableAddress for JSDocNonNullableType<'_> {}
 impl UnstableAddress for JSDocUnknownType {}
 
 impl UnstableAddress for MissingExpression {}
+
+impl UnstableAddress for MalformedExpression {}
+
+impl UnstableAddress for MissingMemberExpression<'_> {}
+
+impl UnstableAddress for MissingType {}

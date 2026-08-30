@@ -87,6 +87,28 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         declare: bool,
     ) -> ArenaBox<'a, VariableDeclaration<'a>> {
         let mut declarations = ArenaVec::new_in(self);
+        if unlikely(self.at(Kind::Eq))
+            && self.options.mode == ParseMode::Editor
+            && decl_parent == VariableDeclarationParent::Statement
+        {
+            let missing_name_span = self.cur_token().span();
+            self.error(diagnostics::variable_declaration_expected(missing_name_span));
+            self.record_recovery("MissingDeclarationName", missing_name_span);
+            self.bump_any();
+
+            let initializer_span = self.cur_token().span();
+            self.error(diagnostics::variable_declaration_expected(initializer_span));
+            self.record_recovery("UnexpectedVariableInitializer", initializer_span);
+
+            return VariableDeclaration::boxed(
+                self.end_span(start),
+                kind,
+                declarations,
+                declare,
+                self,
+            );
+        }
+
         loop {
             let declaration = self.parse_variable_declarator(decl_parent, kind);
             declarations.push(declaration);

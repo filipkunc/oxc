@@ -3290,3 +3290,36 @@ impl<'a> Dummy<'a> for MissingExpression {
         Self { node_id: Dummy::dummy(allocator), span: Dummy::dummy(allocator) }
     }
 }
+
+impl<'a> Dummy<'a> for MalformedExpression {
+    /// Create a dummy [`MalformedExpression`].
+    ///
+    /// Does not allocate any data into arena.
+    fn dummy(allocator: &'a Allocator) -> Self {
+        Self { node_id: Dummy::dummy(allocator), span: Dummy::dummy(allocator) }
+    }
+}
+
+impl<'a> Dummy<'a> for MissingMemberExpression<'a> {
+    /// Create a dummy [`MissingMemberExpression`].
+    ///
+    /// Has cost of making 1 allocation (16 bytes).
+    fn dummy(allocator: &'a Allocator) -> Self {
+        Self {
+            node_id: Dummy::dummy(allocator),
+            span: Dummy::dummy(allocator),
+            object: Dummy::dummy(allocator),
+            missing_property_span: Dummy::dummy(allocator),
+            optional: Dummy::dummy(allocator),
+        }
+    }
+}
+
+impl<'a> Dummy<'a> for MissingType {
+    /// Create a dummy [`MissingType`].
+    ///
+    /// Does not allocate any data into arena.
+    fn dummy(allocator: &'a Allocator) -> Self {
+        Self { node_id: Dummy::dummy(allocator), span: Dummy::dummy(allocator) }
+    }
+}
