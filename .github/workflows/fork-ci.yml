@@ -26,7 +26,7 @@ jobs:
           restore-cache: true
           cache-key: fork-editor-recovery
           tools: just,cargo-shear@1.13.1,typos-cli
-          components: rustfmt,clippy
+          components: rustfmt clippy
 
       - name: Run release gates
         run: env -u NO_COLOR just ready
