@@ -1,4 +1,4 @@
-use oxc_syntax::identifier::{is_identifier_part_ascii, is_identifier_start};
+use oxc_syntax::identifier::{is_identifier_part, is_identifier_part_ascii, is_identifier_start};
 
 use crate::{config::LexerConfig as Config, diagnostics};
 
@@ -231,16 +231,21 @@ impl<C: Config> Lexer<'_, C> {
         // so a cold path: building the diagnostic out-of-line keeps the `OxcDiagnostic` return
         // buffer out of this function's stack frame, so the common (valid) return is near-leaf.
         cold_branch(|| {
+            let suffix_position = self.source.position();
             let offset = self.offset();
             self.consume_char();
             while let Some(c) = self.peek_char() {
-                if is_identifier_start(c) {
+                if is_identifier_part(c) {
                     self.consume_char();
                 } else {
                     break;
                 }
             }
             self.error(diagnostics::invalid_number_end(Span::new(offset, self.offset())));
+            if self.recover_invalid_number_end {
+                self.source.set_position(suffix_position);
+                return kind;
+            }
             self.advance_to_end();
             Kind::Eof
         })

@@ -33,13 +33,23 @@ pub struct RecoveryInspection {
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct InspectionDiagnostic {
+    code: Option<String>,
+    phase: &'static str,
     message: String,
     labels: Vec<InspectionRange>,
 }
 
-impl From<&OxcDiagnostic> for InspectionDiagnostic {
-    fn from(diagnostic: &OxcDiagnostic) -> Self {
+impl InspectionDiagnostic {
+    fn from_oxc(diagnostic: &OxcDiagnostic, phase: &'static str) -> Self {
+        let code = match (&diagnostic.code.scope, &diagnostic.code.number) {
+            (Some(scope), Some(number)) => Some(format!("{scope}{number}")),
+            (Some(scope), None) => Some(scope.to_string()),
+            (None, Some(number)) => Some(number.to_string()),
+            (None, None) => None,
+        };
         Self {
+            code,
+            phase,
             message: diagnostic.message.to_string(),
             labels: diagnostic
                 .labels
@@ -159,8 +169,10 @@ pub fn inspect_recovery(
         Parser::new(&allocator, source_text, source_type)
             .with_options(ParseOptions { mode, ..ParseOptions::default() })
             .parse();
-    let diagnostic_summaries =
-        diagnostics.iter().map(InspectionDiagnostic::from).collect::<Vec<_>>();
+    let diagnostic_summaries = diagnostics
+        .iter()
+        .map(|diagnostic| InspectionDiagnostic::from_oxc(diagnostic, "parse"))
+        .collect::<Vec<_>>();
 
     let mut tree_builder = RecoveryTreeBuilder::default();
     tree_builder.visit_program(&program);
@@ -174,7 +186,8 @@ pub fn inspect_recovery(
     for site in &mut tree_builder.recovery_sites {
         site.diagnostic_index = diagnostic_summaries.iter().position(|diagnostic| {
             diagnostic.labels.iter().any(|label| {
-                label.start == site.start && (label.end == site.end || site.start == site.end)
+                (label.start == site.start && (label.end == site.end || site.start == site.end))
+                    || recovery_precedes_label_through_trivia(source_text, site, *label)
             })
         });
     }
@@ -192,7 +205,11 @@ pub fn inspect_recovery(
         Some(SemanticSummary {
             binding_names,
             reference_count: built.semantic.scoping().references_len(),
-            diagnostics: built.diagnostics.iter().map(InspectionDiagnostic::from).collect(),
+            diagnostics: built
+                .diagnostics
+                .iter()
+                .map(|diagnostic| InspectionDiagnostic::from_oxc(diagnostic, "bind"))
+                .collect(),
         })
     } else {
         None
@@ -223,6 +240,28 @@ pub fn inspect_recovery(
         declaration_names,
         semantic,
     })
+}
+
+fn recovery_precedes_label_through_trivia(
+    source_text: &str,
+    site: &RecoverySite,
+    label: InspectionRange,
+) -> bool {
+    if site.start != site.end {
+        return false;
+    }
+    let recovery_end = site.end;
+    let label_start = label.start;
+    if recovery_end > label_start {
+        return false;
+    }
+    let Ok(start) = usize::try_from(recovery_end) else {
+        return false;
+    };
+    let Ok(end) = usize::try_from(label_start) else {
+        return false;
+    };
+    source_text.get(start..end).is_some_and(|between| between.chars().all(char::is_whitespace))
 }
 
 fn top_level_declaration_names(program: &Program<'_>) -> Vec<String> {
@@ -274,6 +313,8 @@ mod tests {
         assert_eq!(inspection.status, "recovered");
         assert_eq!(inspection.statement_count, 2);
         assert_eq!(inspection.diagnostic_count, 1);
+        assert_eq!(inspection.diagnostics[0].code.as_deref(), Some("TS1109"));
+        assert_eq!(inspection.diagnostics[0].phase, "parse");
         assert_eq!(inspection.recovery_site_count, 1);
         assert_eq!(inspection.declaration_names, ["broken", "intact"]);
         assert_eq!(inspection.recovery_sites[0].kind, "MissingExpression");
@@ -281,6 +322,56 @@ mod tests {
         assert_eq!(inspection.recovery_sites[0].end, 15);
         assert_eq!(inspection.recovery_sites[0].diagnostic_index, Some(0));
         assert_eq!(inspection.semantic.as_ref().unwrap().binding_names, ["broken", "intact"]);
+    }
+
+    #[test]
+    fn following_declaration_keeps_missing_initializer_before_trivia() {
+        let inspection = inspect_recovery(
+            "const broken =\nconst intact: number = \"wrong\";",
+            &options("editor"),
+        )
+        .unwrap();
+
+        assert_eq!(inspection.diagnostics[0].labels[0].start, 15);
+        assert_eq!(inspection.recovery_sites[0].kind, "MissingExpression");
+        assert_eq!(inspection.recovery_sites[0].start, 14);
+        assert_eq!(inspection.recovery_sites[0].end, 14);
+        assert_eq!(inspection.recovery_sites[0].diagnostic_index, Some(0));
+    }
+
+    #[test]
+    fn invalid_numeric_suffix_preserves_later_diagnostics_and_bindings() {
+        let inspection = inspect_recovery(
+            "const broken =123s\nconst intact: number = \"wrong\";",
+            &options("editor"),
+        )
+        .unwrap();
+
+        assert_eq!(inspection.statement_count, 2);
+        assert_eq!(inspection.diagnostics[0].code.as_deref(), Some("TS1351"));
+        assert_eq!(inspection.recovery_sites[0].kind, "InvalidNumericSuffix");
+        assert_eq!(inspection.recovery_sites[0].diagnostic_index, Some(0));
+        assert_eq!(inspection.declaration_names, ["broken", "s", "intact"]);
+        assert_eq!(inspection.semantic.as_ref().unwrap().binding_names, ["broken", "intact", "s"]);
+    }
+
+    #[test]
+    fn missing_declaration_separator_preserves_both_declarators() {
+        let inspection = inspect_recovery(
+            "const broken : string = \"abc\"\nconst intact number = \"wrong\";",
+            &options("editor"),
+        )
+        .unwrap();
+
+        assert_eq!(inspection.statement_count, 2);
+        assert_eq!(inspection.diagnostics[0].code.as_deref(), Some("TS1005"));
+        assert_eq!(inspection.recovery_sites[0].kind, "MissingComma");
+        assert_eq!(inspection.recovery_sites[0].diagnostic_index, Some(0));
+        assert_eq!(inspection.declaration_names, ["broken", "intact", "number"]);
+        assert_eq!(
+            inspection.semantic.as_ref().unwrap().binding_names,
+            ["broken", "intact", "number"]
+        );
     }
 
     #[test]

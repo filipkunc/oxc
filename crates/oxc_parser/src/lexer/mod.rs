@@ -81,6 +81,10 @@ pub struct Lexer<'a, C: Config> {
 
     source_type: SourceType,
 
+    /// Preserve an invalid identifier suffix after a number as the next token so editor parsing
+    /// can continue. Normal lexing keeps its existing fatal end-of-file behavior.
+    recover_invalid_number_end: bool,
+
     token: Token,
 
     pub(crate) errors: Vec<ParserDiagnostic<'a>>,
@@ -148,6 +152,7 @@ impl<'a, C: Config> Lexer<'a, C> {
             allocator,
             source,
             source_type,
+            recover_invalid_number_end: false,
             token,
             errors: vec![],
             deferred_module_errors: vec![],
@@ -158,6 +163,11 @@ impl<'a, C: Config> Lexer<'a, C> {
             tokens,
             config,
         }
+    }
+
+    pub(super) fn with_editor_recovery(mut self, enabled: bool) -> Self {
+        self.recover_invalid_number_end = enabled;
+        self
     }
 
     /// Backdoor to create a `Lexer` without holding a `UniquePromise`, for benchmarks.

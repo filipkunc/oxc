@@ -3,7 +3,7 @@ use std::mem::size_of;
 use oxc_allocator::Allocator;
 use oxc_ast::{
     AstKind,
-    ast::{Expression, TSType},
+    ast::{BindingPattern, Expression, TSType},
 };
 use oxc_ast_visit::{Visit, walk};
 use oxc_parser::{ParseMode, ParseOptions, Parser};
@@ -218,6 +218,7 @@ fn editor_mode_resumes_at_a_following_variable_statement_without_a_semicolon() {
         assert_eq!(parsed.program.body.len(), 2);
         assert_eq!(parsed.diagnostics.len(), 1);
         assert_eq!(parsed.diagnostics[0].message, "Expression expected.");
+        assert_eq!(parsed.diagnostics[0].labels[0].offset(), 15);
 
         let oxc_ast::ast::Statement::VariableDeclaration(first) = &parsed.program.body[0] else {
             panic!("expected the recovered variable declaration");
@@ -225,7 +226,7 @@ fn editor_mode_resumes_at_a_following_variable_statement_without_a_semicolon() {
         let Some(Expression::MissingExpression(missing)) = &first.declarations[0].init else {
             panic!("expected a missing initializer");
         };
-        assert_eq!(missing.span, Span::empty(15));
+        assert_eq!(missing.span, Span::empty(14));
 
         let oxc_ast::ast::Statement::VariableDeclaration(second) = &parsed.program.body[1] else {
             panic!("expected the following variable declaration");
@@ -237,8 +238,9 @@ fn editor_mode_resumes_at_a_following_variable_statement_without_a_semicolon() {
 #[test]
 fn editor_mode_resumes_at_a_var_statement_inside_a_block() {
     let source_text = "function f() { const broken = var intact: number = 1; }";
-    let boundary = u32::try_from(source_text.find("var intact").expect("following declaration"))
-        .expect("source offset fits in u32");
+    let missing_position =
+        u32::try_from(source_text.find("= var").expect("missing initializer") + 1)
+            .expect("source offset fits in u32");
     let allocator = Allocator::default();
     let parsed = Parser::new(&allocator, source_text, SourceType::ts())
         .with_options(ParseOptions { mode: ParseMode::Editor, ..ParseOptions::default() })
@@ -246,15 +248,99 @@ fn editor_mode_resumes_at_a_var_statement_inside_a_block() {
 
     assert!(!parsed.panicked, "editor recovery should preserve the function");
     assert_eq!(parsed.diagnostics.len(), 1);
+    assert_eq!(
+        parsed.diagnostics[0].labels[0].offset(),
+        u32::try_from(source_text.find("var intact").expect("following declaration"))
+            .expect("source offset fits in u32")
+    );
     let mut missing = MissingExpressions::default();
     missing.visit_program(&parsed.program);
-    assert_eq!(missing.spans, [Span::empty(boundary)]);
+    assert_eq!(missing.spans, [Span::empty(missing_position)]);
 
     let oxc_ast::ast::Statement::FunctionDeclaration(function) = &parsed.program.body[0] else {
         panic!("expected a function declaration");
     };
     let body = function.body.as_ref().expect("function body");
     assert_eq!(body.statements.len(), 2);
+}
+
+#[test]
+fn editor_mode_recovers_an_invalid_numeric_suffix_as_a_declarator() {
+    let source_text = "const broken =123s\nconst intact: number = \"wrong\";";
+    let suffix_start =
+        u32::try_from(source_text.find("123s").expect("numeric suffix") + "123".len())
+            .expect("source offset fits in u32");
+    let allocator = Allocator::default();
+    let parsed = Parser::new(&allocator, source_text, SourceType::ts())
+        .with_options(ParseOptions { mode: ParseMode::Editor, ..ParseOptions::default() })
+        .parse();
+
+    assert!(!parsed.panicked, "editor recovery should preserve the program");
+    assert_eq!(parsed.program.body.len(), 2);
+    assert_eq!(parsed.diagnostics.len(), 1);
+    assert_eq!(parsed.diagnostics[0].code.scope.as_deref(), Some("TS"));
+    assert_eq!(parsed.diagnostics[0].code.number.as_deref(), Some("1351"));
+    assert_eq!(parsed.diagnostics[0].labels[0].offset(), suffix_start);
+    assert_eq!(parsed.recoveries.len(), 1);
+    assert_eq!(parsed.recoveries[0].kind, "InvalidNumericSuffix");
+
+    let oxc_ast::ast::Statement::VariableDeclaration(first) = &parsed.program.body[0] else {
+        panic!("expected the recovered variable declaration");
+    };
+    assert_eq!(first.declarations.len(), 2);
+    assert!(matches!(first.declarations[0].init, Some(Expression::NumericLiteral(_))));
+    let BindingPattern::BindingIdentifier(suffix) = &first.declarations[1].id else {
+        panic!("expected the suffix declarator");
+    };
+    assert_eq!(suffix.name, "s");
+}
+
+#[test]
+fn editor_mode_recovers_a_missing_variable_declaration_separator() {
+    let source_text = "const broken : string = \"abc\"\nconst intact number = \"wrong\";";
+    let number_start = u32::try_from(source_text.find("number").expect("second declarator"))
+        .expect("source offset fits in u32");
+    let allocator = Allocator::default();
+    let parsed = Parser::new(&allocator, source_text, SourceType::ts())
+        .with_options(ParseOptions { mode: ParseMode::Editor, ..ParseOptions::default() })
+        .parse();
+
+    assert!(!parsed.panicked, "editor recovery should preserve the program");
+    assert_eq!(parsed.program.body.len(), 2);
+    assert_eq!(parsed.diagnostics.len(), 1);
+    assert_eq!(parsed.diagnostics[0].code.scope.as_deref(), Some("TS"));
+    assert_eq!(parsed.diagnostics[0].code.number.as_deref(), Some("1005"));
+    assert_eq!(parsed.diagnostics[0].labels[0].offset(), number_start);
+    assert_eq!(parsed.recoveries.len(), 1);
+    assert_eq!(parsed.recoveries[0].kind, "MissingComma");
+
+    let oxc_ast::ast::Statement::VariableDeclaration(second) = &parsed.program.body[1] else {
+        panic!("expected the recovered variable declaration");
+    };
+    let names = second
+        .declarations
+        .iter()
+        .map(|declaration| {
+            let BindingPattern::BindingIdentifier(identifier) = &declaration.id else {
+                panic!("expected binding identifier");
+            };
+            identifier.name.as_str()
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(names, ["intact", "number"]);
+}
+
+#[test]
+fn normal_mode_remains_fatal_for_invalid_or_unseparated_declarators() {
+    for source_text in [
+        "const broken =123s\nconst intact: number = \"wrong\";",
+        "const broken : string = \"abc\"\nconst intact number = \"wrong\";",
+    ] {
+        let allocator = Allocator::default();
+        let parsed = Parser::new(&allocator, source_text, SourceType::ts()).parse();
+        assert!(parsed.panicked);
+        assert!(parsed.program.body.is_empty());
+    }
 }
 
 #[test]

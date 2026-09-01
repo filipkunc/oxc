@@ -699,7 +699,8 @@ impl<'a, C: ParserConfig> ParserImpl<'a, C> {
     ) -> Self {
         Self {
             options,
-            lexer: Lexer::new(allocator, source_text, source_type, config.lexer_config(), unique),
+            lexer: Lexer::new(allocator, source_text, source_type, config.lexer_config(), unique)
+                .with_editor_recovery(options.mode == ParseMode::Editor),
             source_type,
             source_text,
             errors: vec![],

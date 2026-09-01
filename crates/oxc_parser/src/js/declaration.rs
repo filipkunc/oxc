@@ -111,12 +111,43 @@ impl<'a, C: Config> ParserImpl<'a, C> {
         }
 
         self.recovery_context_add(RecoveryContext::VariableDeclarations, |parser| {
+            let mut recovered_declarator = false;
             loop {
                 let declaration = parser.parse_variable_declarator(decl_parent, kind);
-                declarations.push(declaration);
-                if !parser.eat(Kind::Comma) {
-                    break;
+                let invalid_numeric_suffix = declaration.init.as_ref().is_some_and(|initializer| {
+                    matches!(initializer, Expression::NumericLiteral(_))
+                        && initializer.span().end == parser.cur_start()
+                });
+                let recover_missing_separator = parser.options.mode == ParseMode::Editor
+                    && !parser.cur_token().is_on_new_line()
+                    && parser.cur_kind().is_binding_identifier();
+
+                if decl_parent == VariableDeclarationParent::Statement
+                    && !recovered_declarator
+                    && !recover_missing_separator
+                {
+                    parser.check_missing_initializer(&declaration, kind);
                 }
+                declarations.push(declaration);
+                if parser.eat(Kind::Comma) {
+                    recovered_declarator = false;
+                    continue;
+                }
+                if recover_missing_separator {
+                    let token_span = parser.cur_token().span();
+                    if invalid_numeric_suffix {
+                        parser.record_recovery("InvalidNumericSuffix", token_span);
+                    } else {
+                        parser.record_missing_token_recovery(
+                            Kind::Comma,
+                            Span::empty(token_span.start),
+                        );
+                        parser.error(diagnostics::typescript_expected_token(",", token_span));
+                    }
+                    recovered_declarator = true;
+                    continue;
+                }
+                break;
             }
         });
 
@@ -171,8 +202,19 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             && (decl_parent == VariableDeclarationParent::Statement
                 || !self.at_recovery_statement_element_start())
         {
-            let span = Span::empty(self.cur_start());
-            self.error(diagnostics::expression_expected(span));
+            let diagnostic_span = Span::empty(self.cur_start());
+            // A following statement is the recovery boundary, not part of the missing initializer.
+            // Keep the missing node at the end of `=` while leaving the diagnostic free to point at
+            // the unexpected statement token, matching TypeScript's recovered tree.
+            let missing_start = if decl_parent == VariableDeclarationParent::Statement
+                && self.at_recovery_statement_element_start()
+            {
+                self.prev_token_end
+            } else {
+                self.cur_start()
+            };
+            let span = Span::empty(missing_start);
+            self.error(diagnostics::expression_expected(diagnostic_span));
             Some(Expression::MissingExpression(MissingExpression::boxed(span, self)))
         } else {
             Some(self.parse_assignment_expression_or_higher())
@@ -191,9 +233,6 @@ impl<'a, C: Config> ParserImpl<'a, C> {
             && !(kind.is_const() && decl.type_annotation.is_none())
         {
             self.error(diagnostics::initializers_not_allowed_in_ambient_contexts(init.span()));
-        }
-        if decl_parent == VariableDeclarationParent::Statement {
-            self.check_missing_initializer(&decl, kind);
         }
         if let Some(definite_start) = definite_start {
             let span = Span::sized(definite_start, 1);
@@ -260,6 +299,9 @@ impl<'a, C: Config> ParserImpl<'a, C> {
                 VariableDeclarationParent::Statement
             };
             let declaration = self.parse_variable_declarator(decl_parent, kind);
+            if decl_parent == VariableDeclarationParent::Statement {
+                self.check_missing_initializer(&declaration, kind);
+            }
 
             if !matches!(declaration.id, BindingPattern::BindingIdentifier(_)) {
                 self.error(diagnostics::invalid_identifier_in_using_declaration(

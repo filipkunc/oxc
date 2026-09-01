@@ -253,7 +253,8 @@ parser_diagnostics! {
     };
 
     invalid_number_end(span: Span) => {
-        OxcDiagnostic::error("Invalid characters after number").with_label(span)
+        ts_error("1351", "An identifier or keyword cannot immediately follow a numeric literal.")
+            .with_label(span)
     };
 
     unterminated_multi_line_comment(span: Span) => {
